@@ -1,18 +1,20 @@
-# FYS-STK4155-P0
+# FYS-STK4155 -- Project 2
 
-> Template repository for academic ML projects (FYS-STK4155 and similar).
-> Replace this description with the project's own.
+> TODO: replace with the project's own description once the topic is settled.
+> Coursework for FYS-STK4155 at UiO, built from a template repo for academic
+> ML projects — see [FYS-STK4155-P1](https://github.com/sigurdriseth/FYS-STK4155-P1)
+> for a filled-in example of this same structure.
 
 ## Project structure
 
 ```
 .
-├── src/fys_stk4155_p0/   # importable package — all reusable logic lives here
+├── src/fys_stk4155_p2/   # importable package — all reusable logic lives here
 ├── tests/                # pytest test suite, mirrors src/ structure
 ├── scripts/              # thin runnable entry points (data download, experiments)
 ├── notebooks/            # exploratory Jupyter notebooks (outputs stripped on commit)
 ├── data/                 # raw/processed data — gitignored, see data/README.md
-├── docs/                 # report, write-up, figures
+├── docs/                 # IEEE-format LaTeX report skeleton, figures
 └── .github/workflows/    # CI: pre-commit hooks + tests on every push/PR
 ```
 
@@ -22,7 +24,7 @@ Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 (pinned in
 `.python-version`).
 
 ```bash
-uv sync                  # installs dependencies + dev tools into .venv
+uv sync                    # installs dependencies + dev tools into .venv
 uv run pre-commit install  # enable git hooks (lint, format, nbstripout, mypy, gitleaks)
 ```
 
@@ -40,6 +42,21 @@ uv run pre-commit install  # enable git hooks (lint, format, nbstripout, mypy, g
 CI (`.github/workflows/ci.yml`) runs `uv sync --locked` (fails if `uv.lock`
 is out of sync with `pyproject.toml`), all pre-commit hooks, and the test
 suite on every push and pull request.
+
+## Report
+
+`docs/main.tex` is an IEEE-format LaTeX skeleton (no content yet). Build it
+with:
+
+```bash
+make report         # -> docs/main.pdf
+make clean-report   # remove LaTeX build artifacts (not main.pdf itself)
+```
+
+`docs/references.bib` is exported from Zotero (Better BibTeX), not hand-edited.
+There is no experiment/figure pipeline yet — once results exist, follow the
+config-driven `scripts/` + `make experiments`/`make figures` pattern used in
+[FYS-STK4155-P1](https://github.com/sigurdriseth/FYS-STK4155-P1).
 
 ## Reproducibility
 

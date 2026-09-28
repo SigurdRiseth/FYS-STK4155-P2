@@ -1,0 +1,84 @@
+\documentclass[a4paper]{IEEEtran}
+% \IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote.
+% If that is unneeded, please comment it out.
+\usepackage[
+    backend=biber,
+    style=ieee
+]{biblatex}
+\DeclareFieldFormat[article]{volume}{\mkbibbold{#1}}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\usepackage{listings,newtxtt}
+\lstset{
+    basicstyle=\footnotesize\ttfamily,
+    keywordstyle=\bfseries,
+    frame=leftline,
+    framesep=4pt,
+}
+\crefname{lstlisting}{listing}{listings}
+\Crefname{lstlisting}{Listing}{Listings}
+\usepackage{bm}
+\usepackage{tabularx}
+
+\addbibresource{references.bib}
+
+\begin{document}
+
+\title{TODO: Project 2 Title}
+
+\author{
+    \IEEEauthorblockN{Sigurd Riseth}\\
+    \IEEEauthorblockA{\textit{Department of Physics}\\
+    \textit{University of Oslo}\\
+    Oslo, Norway \\
+    sigurri@uio.no}
+}
+
+\maketitle
+
+% Abstract. 120-180 words, one paragraph, no citations or equations.
+% Past tense for what you did, and at least one concrete result.
+\begin{abstract}
+TODO: abstract.
+\end{abstract}
+
+\begin{IEEEkeywords}
+TODO, keywords
+\end{IEEEkeywords}
+
+%\tableofcontents
+
+\input{sections/01-introduction}
+\input{sections/02-methods}
+\input{sections/03-implementation}
+\input{sections/04-results-discussion}
+\input{sections/05-conclusion}
+
+\printbibliography
+
+\appendix
+
+% Additional calculations used to validate the codes
+% Selected calculations, these can be listed with few comments
+% Listing of the code if you feel this is necessary
+
+% You can consider moving parts of the material from the methods section
+% to the appendix or your GitHub/Gitlab repository. You can also place
+% additional material on your webpage.
+
+\input{sections/appendices/0a-ai-usage}
+\input{sections/appendices/0b-add-results}
+
+\end{document}
