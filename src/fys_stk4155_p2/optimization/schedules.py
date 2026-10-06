@@ -11,6 +11,8 @@ Tool: Claude (September 2026)
 Role: Wrote the constant/time-based/exponential-decay schedule factories.
 Modifications: Reviewed against Hjorth-Jensen (2026) Section 4.7.1 and Géron
     Chapter 11; tested in tests/optimization/test_schedules.py.
+
+This module is reused from project 1 (Riseth, 2026).
 """
 
 from collections.abc import Callable

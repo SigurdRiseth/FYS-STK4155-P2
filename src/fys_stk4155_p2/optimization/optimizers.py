@@ -1,6 +1,6 @@
 """Optimizers.
 
-This module is reused from Riseth (2026).
+This module is reused from project 1 (Riseth, 2026).
 """
 
 from abc import ABC, abstractmethod
