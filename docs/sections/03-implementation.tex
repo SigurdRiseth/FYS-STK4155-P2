@@ -5,11 +5,29 @@
 % was verified (unit tests, comparison against scikit-learn/known solutions,
 % etc.). Link to the repository.
 
-TODO: implementation.
+% We should probably reference the first project \cite{riseth_2026} if we reuse code?
 
-\cite{riseth_2026a}
+We implemented all methods ourselves in Python using NumPy~\cite{harris_2020},
+with the full source code, tests, and experiment scripts available in the project
+repository~\cite{riseth_2026a}. Below, we cover the data, preprocessing,
+code structure, and how we verified the implementation.
 
-\subsection{Data and preprocessing}
-\label{subsec:data}
+\subsection{Data and preprocessing}\label{subsec:data}
 
-TODO: data and preprocessing.
+For the regression task we use Runge's function~\cite{runge_1901}.
+
+For the classification task we use the classic MNIST dataset~\cite{lecun_2010},
+a collection of 70\,000 handwritten digits and their corresponding labels (i.e., 0--9).
+
+\subsection{Code structure}\label{subsec:code-structure}
+
+We reuse the structure and the gradient machinery of the previous project~\cite{riseth_2026}.
+The code is structured in a package \texttt{fys\_stk4155\_p2}, containing the
+directories \texttt{nn}, \texttt{optimization}; which respectively hold the code for the
+models and gradient descent.
+
+Thin constructor of the FFNN for logistic regression, which returns a single layer with
+softmax activation and cross entropy loss. This allows us to use this as a baseline model
+when evaluating the later neural networks.
+
+\subsection{Verification}\label{subsec:verification}

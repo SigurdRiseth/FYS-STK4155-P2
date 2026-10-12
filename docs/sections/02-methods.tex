@@ -5,4 +5,51 @@
 % linear algebra and statistics. Break into \subsection{}s as the content
 % develops, e.g. one per model/algorithm.
 
-TODO: methods.
+This section presents the models, ... We assume the reader has familiarity
+with basic linear algebra and statistics.
+
+\subsection{Logistic regression}\label{subsec:logistic-regression}
+
+Logistic regression is a natural choice as a baseline. It is a simple model in which
+everything can be computed, its cost function is convex, and it is exactly a neural
+network with no hidden layers~\cite{hjorth-jensen_2026}.
+
+\subsubsection{Error measures}
+
+We evaluate a prediction $\bm{\tilde{y}}$ of targets $\bm{y}$ by
+
+\subsection{Neural networks}\label{subsec:neural-networks}
+
+
+
+\subsubsection{The artificial neuron}\label{subsubsec:artificial-neuron}
+
+
+\subsubsection{Activation functions}
+
+% Introduce why it must be non-linear and why we care about the derivative
+% Element-wise (done for all $z$ in $\bm{z}$). Should we write z or \bm{z} below?
+
+Our study will revolve around the following three activation functions:
+
+\paragraph{Sigmoid} The logistic or sigmoid function is given by
+\begin{equation*}\label{eq:sigmoid}
+    \sigma(z) = \frac{1}{1+e^{-z}},
+\end{equation*}
+
+
+\paragraph{ReLU} The rectified linear unit (ReLU),
+\begin{equation*}\label{eq:relu}
+    \mathrm{ReLU}(z) = \max (0, z),
+\end{equation*}
+is faster to compute
+
+The leaky ReLU is defined as
+\begin{equation*}\label{eq:leaky-relu}
+    \mathrm{LReLU}(z) =
+    \begin{cases}
+        z, & \text{if } z > 0, \\
+        \alpha z, & \text{if } z \leq 0,
+    \end{cases}
+    \qquad \alpha \approx 0.01.
+\end{equation*}
