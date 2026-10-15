@@ -34,6 +34,10 @@ data/*
 # docs/figures/README.md)
 docs/figures/*
 !docs/figures/README.md
+# TikZ figure sources are committed; their compiled output is not
+!docs/figures/tikz/
+docs/figures/tikz/*
+!docs/figures/tikz/*.tex
 
 # LaTeX build artifacts (docs/main.pdf itself is committed as the report)
 docs/*.aux
