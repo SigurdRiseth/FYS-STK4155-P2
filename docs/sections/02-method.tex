@@ -1,0 +1,151 @@
+\section{Method}
+\label{sec:method}
+
+% Theory, methods, algorithms. Assume the reader has familiarity with basic
+% linear algebra and statistics. Break into \subsection{}s as the content
+% develops, e.g. one per model/algorithm.
+
+This section presents the models, linear regression, logistic regression, and
+neural networks, and finally the evaluation methods used. We assume the reader has
+familiarity with basic linear algebra and statistics.
+
+\subsection{Linear regression}\label{subsec:linear-regression}
+% - Model $\hat{\bm y} = X\bm\beta$, MSE loss, the OLS and Ridge closed forms.
+% - Write out the gradient explicitly: $\nabla_\beta C = \frac{2}{n}X^\top(X\bm\beta - \bm y) + 2\lambda\bm\beta$. This sets up everything later.
+% - Introduce gradient descent here, with the closed form available as a check. That gives a clean place to define GD, SGD/mini-batches, momentum, RMSprop and Adam once.
+
+\subsection{Logistic regression}\label{subsec:logistic-regression}
+
+% - Motivation: the targets are classes, so you want probabilities. Apply the sigmoid to the linear predictor.
+% - Derive binary cross-entropy from maximum likelihood (Bernoulli). That justifies the loss instead of just stating it.
+% - Point out that there is no closed form, so you now need the gradient-descent machinery from 2.1.
+% - The key result: the gradient is $\nabla_\beta C = \frac{1}{n}X^\top(\hat{\bm y} - \bm y)$, the same form as for linear regression. Matching the sigmoid with BCE is what cancels the $\sigma'$ term. This makes a good bridge to the next section.
+% - Mention convexity, since it means there is one minimum (unlike neural networks).
+% - If you use MNIST, add a short paragraph on softmax and categorical cross-entropy as the multiclass generalization.
+
+Logistic regression is a natural choice as a baseline. It is a simple model in which
+everything can be computed, its cost function is convex, and it is exactly a neural
+network with no hidden layers~\cite{hjorth-jensen_2026}.
+
+\subsection{Neural networks}\label{subsec:neural-networks}
+
+% - Start with your existing sentence: a single neuron is linear or logistic regression,
+% depending on $f$. The limitation is that the features $X$ are fixed.
+% A network instead learns the features passed to that final layer.
+
+Linear and logistic regression share a common limitation: both act on a fixed
+design matrix $\bm{X}$, so the model can only be as expressive as the features we
+choose to put into it. A feed-forward neural network removes this limitation by
+inserting one or more \emph{hidden layers} between the input and the output, each applying
+a linear map followed by a non-linear activation. The final layer is then nothing more
+than a linear or logistic regression, but it acts on features that are \emph{learned} from
+the data rather than given in advance~\cite{hjorth-jensen_2026}.
+% Since the parameters
+% of these hidden layers enter the cost function non-linearly, there is no closed-form
+% solution, and the network must be trained with gradient-based methods, computed by
+% backpropagation.
+
+\subsubsection{The artificial neuron}\label{subsubsec:artificial-neuron}
+
+An artificial neuron computes a linear predictor, as in logistic regression, followed
+by an activation function. We number layers as $l =0,1,\dots,L$, with $l=0$ the input and
+$l=L$ the output, and $M_l$ the number of nodes in layer $L$. For a single neuron $j$ in
+layer $l$, the activation is
+\begin{equation}\label{eq:single-activation}
+    z_j^l = \sum_{i=1}^{M_{l-1}} w_{ij}^l a_i^{l-1}+b_j^l,
+\end{equation}
+where $w_{ij}^l$ is the weight connecting node $i$ of layer $l-1$ to node $j$ of layer $l$,
+and $b_j^l$ is the bias of node $j$ in layer $l$. We can then obtain the output by applying
+the activation function~\cite{hjorth-jensen_2026},
+\begin{equation}\label{eq:single-activation-function}
+    a_j^l = f(z_j^l).
+\end{equation}
+This whole process is depicted in \cref{fig:single-artificial-neuron}.
+
+\begin{figure}[htbp]
+    \centering
+    \includestandalone[width=0.8\linewidth]{figures/tikz/single-artificial-neuron}
+    \caption{The activation and output of a single neuron $j$ in layer $l$,
+    as shown in \cref{eq:single-activation,eq:single-activation-function}.}
+    \label{fig:single-artificial-neuron}
+\end{figure}
+
+\subsubsection{Forward pass}
+
+We can write the activation and output of all neurons the layer $l$ in matrix-form,
+where \cref{eq:single-activation,eq:single-activation-function} become
+\begin{equation}\label{eq:matrix-form-activation}
+    \bm{z}^l = (\bm{W}^l)^\top \bm{a}^{l-1} + \bm{b}^l,
+    \qquad \bm{a}^l = \bm{f}(\bm{z}^l),
+\end{equation}
+with $\bm{f}$ applied element-wise. Evaluating \cref{eq:matrix-form-activation}
+sequentially for all $l$-values is the feed-forward pass and returns the network
+output $\bm{\tilde{y}}=\bm{a}^L$~\cite{hjorth-jensen_2026}.
+
+
+
+\begin{figure}[htbp]
+    \centering
+    \includestandalone[width=0.8\linewidth]{figures/tikz/dense-neural-network}
+    \caption{Illustration of a fully connected feed-forward neural network.
+    Adapted from \textcite{love_2024}.}
+    \label{fig:neural-network-tikz}
+\end{figure}
+
+\subsubsection{Activation functions}
+
+% Introduce why it must be non-linear and why we care about the derivative
+% Element-wise (done for all $z$ in $\bm{z}$). Should we write z or \bm{z} below?
+
+% Activation functions. First explain why they must be nonlinear: stacked linear layers collapse into one linear map. Then cover why the derivative matters, which leads into backprop. Then sigmoid, ReLU and leaky ReLU, including vanishing gradients and saturation as the argument for ReLU.
+
+Our study will revolve around the following three activation functions:
+
+\paragraph{Sigmoid} The logistic or sigmoid function is given by
+\begin{equation*}\label{eq:sigmoid}
+    \sigma(z) = \frac{1}{1+e^{-z}}, \qquad \sigma'(z) = \sigma (z) (1 - \sigma (z))
+\end{equation*}
+
+\paragraph{ReLU} The rectified linear unit (ReLU),
+\begin{equation*}\label{eq:relu}
+    \mathrm{ReLU}(z) = \max (0, z),
+    \quad \mathrm{ReLU}'(z) =
+    \begin{cases}
+        1, & \text{if } z>0, \\
+        0, & \text{if } z\leq 0,
+    \end{cases}
+\end{equation*}
+is faster to compute
+
+The leaky ReLU is defined as
+\begin{equation*}\label{eq:leaky-relu}
+    \mathrm{LReLU}(z) =
+    \begin{cases}
+        z, & \text{if } z > 0, \\
+        \alpha z, & \text{if } z \leq 0,
+    \end{cases}
+    \quad \alpha \approx 0.01,
+\end{equation*}
+and its derivative is
+\begin{equation*}
+    \mathrm{LReLU}'(z) =
+    \begin{cases}
+        1, & \text{if } z > 0, \\
+        \alpha, & \text{if } z \leq 0.
+    \end{cases}
+\end{equation*}
+
+\subsubsection{Backpropagation}
+
+\subsubsection{Choice of output layer and loss function}
+% Identity with MSE gives regression while sigmoid or softmax with cross-entropy gives classification.
+% The two earlier models reappear as special cases of the output layer.
+
+
+\subsubsection{Weight initialization}
+%  Weight initialization, which is new since there was nothing to initialize with a closed form. This is where initializers.py fits in.
+
+\subsubsection{Regularization}
+% L2 regularization as weight decay, explicitly the same term as Ridge.
+
+\subsection{Evaluation}

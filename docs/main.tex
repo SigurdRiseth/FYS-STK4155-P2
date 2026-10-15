@@ -9,6 +9,10 @@
 \DeclareFieldFormat[article]{volume}{\mkbibbold{#1}}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
+\usepackage{standalone}
+\usepackage{verbatim}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, chains, shapes, fit, backgrounds}
 \usepackage{textcomp}
 \usepackage{xcolor}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
@@ -36,7 +40,7 @@
 
 \begin{document}
 
-\title{Project 2 Title}
+\title{Project 2}
 
 \author{
     \IEEEauthorblockN{Sigurd Riseth}\\
@@ -55,13 +59,13 @@ abstract.
 \end{abstract}
 
 \begin{IEEEkeywords}
-classification, regression, neural networks,
+classification, regression, neural networks, runge's function, MNIST
 \end{IEEEkeywords}
 
 %\tableofcontents
 
 \input{sections/01-introduction}
-\input{sections/02-methods}
+\input{sections/02-method}
 \input{sections/03-implementation}
 \input{sections/04-results-discussion}
 \input{sections/05-conclusion}
