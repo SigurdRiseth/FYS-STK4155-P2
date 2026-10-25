@@ -1,4 +1,4 @@
-"""Loss functions and their derivatives."""
+"""Loss functions (BCE, CCE, and MSE) and their derivatives."""
 
 from collections.abc import Sequence
 from typing import Literal
@@ -155,10 +155,10 @@ def regularization_gradient(
         The gradient, same shape as ``W``.
     """
     _check_regularization(kind, lambda_)
-    W = np.asarray(W, dtype=np.float64)
+    weights = np.asarray(W, dtype=np.float64)
 
     if kind == "none" or lambda_ == 0:
-        return np.zeros_like(W)
+        return np.zeros_like(weights)
     if kind == "l1":
-        return lambda_ * np.sign(W)
-    return 2 * lambda_ * W
+        return lambda_ * np.sign(weights)
+    return 2 * lambda_ * weights
