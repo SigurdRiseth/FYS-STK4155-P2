@@ -49,3 +49,27 @@ def binary_cross_entropy_derivative(
 
 # def categorical_cross_entropy() -> np.float64:
 #    pass
+
+
+def mean_squared_error(y_true: NDArray[np.float64], y_pred: NDArray[np.float64]) -> np.float64:
+    """Mean squared error loss between the true and predicted target.
+
+    Args:
+        y_true: True target values, shape (n_samples,).
+        y_pred: Predicted target values, shape (n_samples,).
+
+    Returns:
+        The mean squared error.
+    """
+    y_true = np.asarray(y_true, dtype=np.float64)
+    y_pred = np.asarray(y_pred, dtype=np.float64)
+    return np.mean((y_true - y_pred) ** 2)
+
+
+def mean_squared_error_derivative(
+    y_true: NDArray[np.float64], y_pred: NDArray[np.float64]
+) -> NDArray[np.float64]:
+    """Derivate of `mean_squared_error` wrt. the prediction."""
+    y_true = np.asarray(y_true, dtype=np.float64)
+    y_pred = np.asarray(y_pred, dtype=np.float64)
+    return 2 * (y_pred - y_true) / len(y_true)
