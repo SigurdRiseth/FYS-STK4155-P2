@@ -14,6 +14,8 @@ familiarity with basic linear algebra and statistics.
 % - Write out the gradient explicitly: $\nabla_\beta C = \frac{2}{n}X^\top(X\bm\beta - \bm y) + 2\lambda\bm\beta$. This sets up everything later.
 % - Introduce gradient descent here, with the closed form available as a check. That gives a clean place to define GD, SGD/mini-batches, momentum, RMSprop and Adam once.
 
+
+
 \subsection{Logistic regression}\label{subsec:logistic-regression}
 
 % - Motivation: the targets are classes, so you want probabilities. Apply the sigmoid to the linear predictor.
@@ -82,8 +84,6 @@ with $\bm{f}$ applied element-wise. Evaluating \cref{eq:matrix-form-activation}
 sequentially for all $l$-values is the feed-forward pass and returns the network
 output $\bm{\tilde{y}}=\bm{a}^L$~\cite{hjorth-jensen_2026}.
 
-
-
 \begin{figure}[htbp]
     \centering
     \includestandalone[width=0.8\linewidth]{figures/tikz/dense-neural-network}
@@ -92,19 +92,36 @@ output $\bm{\tilde{y}}=\bm{a}^L$~\cite{hjorth-jensen_2026}.
     \label{fig:neural-network-tikz}
 \end{figure}
 
+We can collect the weights and biases into a single parameter vector
+$\bm{\Theta}=\{\bm{w}^l, \bm{b}^l\}_{l=1}^L$, and solve the optimization problem
+\begin{equation}\label{eq:nn-optimization-problem}
+    \hat{\bm{\Theta}} = \arg \min_{\bm{\Theta}} C(\bm{\Theta}), \quad
+    C(\bm{\Theta}) = \frac{1}{n} \sum_{i=1}^n L(y_i, \tilde{y}_i) + \lambda \Omega(\bm{\Theta}),
+\end{equation}
+where $L$ is the cost function and $\Omega$ is the regularization term~\cite{hjorth-jensen_2026}.
+
 \subsubsection{Activation functions}
 
 % Introduce why it must be non-linear and why we care about the derivative
 % Element-wise (done for all $z$ in $\bm{z}$). Should we write z or \bm{z} below?
 
-% Activation functions. First explain why they must be nonlinear: stacked linear layers collapse into one linear map. Then cover why the derivative matters, which leads into backprop. Then sigmoid, ReLU and leaky ReLU, including vanishing gradients and saturation as the argument for ReLU.
+% Activation functions. First explain why they must be nonlinear: stacked linear layers
+% collapse into one linear map. Then cover why the derivative matters, which leads into
+% backprop. Then sigmoid, ReLU and leaky ReLU, including vanishing gradients and
+% saturation as the argument for ReLU.
 
+The activation function must be non-linear and differentiable almost everywhere.
+If it were linear, the composition of multiple layers would collapse into a single
+affine transformation, and the network would be no more expressive than a single
+layer~\cite{hjorth-jensen_2026}.
 Our study will revolve around the following three activation functions:
 
 \paragraph{Sigmoid} The logistic or sigmoid function is given by
 \begin{equation*}\label{eq:sigmoid}
-    \sigma(z) = \frac{1}{1+e^{-z}}, \qquad \sigma'(z) = \sigma (z) (1 - \sigma (z))
+    \sigma(z) = \frac{1}{1+e^{-z}}, \qquad \sigma'(z) = \sigma (z) (1 - \sigma (z)),
 \end{equation*}
+and was the standard choice for decades. Its main drawback is that it saturates for
+large $|z|$, which leads to vanishing gradients and slow training~\cite{hjorth-jensen_2026}.
 
 \paragraph{ReLU} The rectified linear unit (ReLU),
 \begin{equation*}\label{eq:relu}
@@ -115,9 +132,11 @@ Our study will revolve around the following three activation functions:
         0, & \text{if } z\leq 0,
     \end{cases}
 \end{equation*}
-is faster to compute
+is faster to compute, does not saturate for $z>0$, and is a sound default choice for hidden layers.
+Its main drawback is that it can lead to dead neurons, which never activate and thus never learn~\cite{hjorth-jensen_2026}.
 
-The leaky ReLU is defined as
+The leaky ReLU (LReLU) repairs this issue by allowing a small gradient for negative values,
+so the gradient never completely vanishes. It is defined as
 \begin{equation*}\label{eq:leaky-relu}
     \mathrm{LReLU}(z) =
     \begin{cases}
