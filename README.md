@@ -1,9 +1,8 @@
 # FYS-STK4155 -- Project 2
 
-> TODO: replace with the project's own description once the topic is settled.
-> Coursework for FYS-STK4155 at UiO, built from a template repo for academic
-> ML projects — see [FYS-STK4155-P1](https://github.com/sigurdriseth/FYS-STK4155-P1)
-> for a filled-in example of this same structure.
+Regression and classification on the Runge function and MNIST dataset using
+linear and logistic regression and feed-forward neural networks. Coursework
+for FYS-STK4155 at the University of Oslo (UiO).
 
 ## Project structure
 
