@@ -1,6 +1,7 @@
 \documentclass{standalone}
 
 \usepackage{tikz}
+\usepackage{bm}
 
 \usetikzlibrary{positioning, chains, shapes.geometric, fit, shapes, arrows.meta, calc, backgrounds}
 
@@ -90,10 +91,10 @@
     \draw [arrow] (third_m) to (fourth_k);
 
     % Layer Labels
-    \node[above=0.25cm of first_1] (xlabel) {$\mathbf{x}$};
-    \node[above=0.25cm of second_1] (h1label) {$\mathbf{h}^{(1)}$};
-    \node[above=0.25cm of third_1] (h2label) {$\mathbf{h}^{(2)}$};
-    \node[above=0.25cm of fourth_1] (ylabel) {$\hat{\mathbf{y}}$};
+    \node[above=0.25cm of first_1] (xlabel) {$\bm{x}$};
+    \node[above=0.25cm of second_1] (h1label) {$\bm{h}^{(1)}$};
+    \node[above=0.25cm of third_1] (h2label) {$\bm{h}^{(2)}$};
+    \node[above=0.25cm of fourth_1] (ylabel) {$\tilde{\bm{y}}$};
 
     \node[cell, dashed, fit=(first_1) (first_n)] (xbox) {};
     \node[cell, dashed, fit=(second_1) (second_m)] (xbox) {};
