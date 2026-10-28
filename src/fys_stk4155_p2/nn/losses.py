@@ -50,8 +50,31 @@ def binary_cross_entropy_derivative(
     return (sigmoid(logits) - y_true) / y_true.size
 
 
-# def categorical_cross_entropy() -> np.float64:
-#    pass
+def categorical_cross_entropy(
+    y_true: NDArray[np.float64], logits: NDArray[np.float64]
+) -> np.float64:
+    """Categorical cross entropy loss from one-hot encoded targets and logits."""
+    y_true = np.asarray(y_true, dtype=np.float64)
+    logits = np.asarray(logits, dtype=np.float64)
+
+    shifted = logits - np.max(logits, axis=1, keepdims=True)
+    log_probs = shifted - np.log(np.sum(np.exp(shifted), axis=1, keepdims=True))
+
+    return -np.mean(np.sum(y_true * log_probs, axis=1))
+
+
+def categorical_cross_entropy_derivative(
+    y_true: NDArray[np.float64], logits: NDArray[np.float64]
+) -> NDArray[np.float64]:
+    """Derivative of the categorical cross entropy wrt. logits."""
+    y_true = np.asarray(y_true, dtype=np.float64)
+    logits = np.asarray(logits, dtype=np.float64)
+
+    shifted = logits - np.max(logits, axis=1, keepdims=True)
+    exp_logits = np.exp(shifted)
+    y_pred = exp_logits / np.sum(exp_logits, axis=1, keepdims=True)
+
+    return (y_pred - y_true) / logits.shape[0]
 
 
 def _validate_targets(
