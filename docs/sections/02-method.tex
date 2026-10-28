@@ -14,7 +14,7 @@ familiarity with basic linear algebra and statistics.
 % - Write out the gradient explicitly: $\nabla_\beta C = \frac{2}{n}X^\top(X\bm\beta - \bm y) + 2\lambda\bm\beta$. This sets up everything later.
 % - Introduce gradient descent here, with the closed form available as a check. That gives a clean place to define GD, SGD/mini-batches, momentum, RMSprop and Adam once.
 
-
+\subsubsection{Gradient descent}\label{subsubsec:gradient-descent}
 
 \subsection{Logistic regression}\label{subsec:logistic-regression}
 
@@ -62,7 +62,8 @@ the activation function~\cite{hjorth-jensen_2026},
 \begin{equation}\label{eq:single-activation-function}
     a_j^l = f(z_j^l).
 \end{equation}
-This whole process is depicted in \cref{fig:single-artificial-neuron}.
+This whole process is depicted in \cref{fig:single-artificial-neuron}, where the activation
+and output of a single neuron $j$ in layer $l$ is shown.
 
 \begin{figure}[htbp]
     \centering
@@ -92,13 +93,16 @@ output $\bm{\tilde{y}}=\bm{a}^L$~\cite{hjorth-jensen_2026}.
     \label{fig:neural-network-tikz}
 \end{figure}
 
-We can collect the weights and biases into a single parameter vector
-$\bm{\Theta}=\{\bm{w}^l, \bm{b}^l\}_{l=1}^L$, and solve the optimization problem
+We can further collect the weights and biases into a single parameter vector
+$\bm{\Theta}=\{\bm{w}^l, \bm{b}^l\}_{l=1}^L$, and write the optimization problem as
 \begin{equation}\label{eq:nn-optimization-problem}
     \hat{\bm{\Theta}} = \arg \min_{\bm{\Theta}} C(\bm{\Theta}), \quad
     C(\bm{\Theta}) = \frac{1}{n} \sum_{i=1}^n L(y_i, \tilde{y}_i) + \lambda \Omega(\bm{\Theta}),
 \end{equation}
 where $L$ is the cost function and $\Omega$ is the regularization term~\cite{hjorth-jensen_2026}.
+This is a non-convex optimization problem, so there is no closed-form solution, and we must
+resort to the gradient-based methods reported in \cref{subsubsec:gradient-descent} to find
+a local minimum.
 
 \subsubsection{Activation functions}
 
@@ -155,6 +159,31 @@ and its derivative is
 \end{equation*}
 
 \subsubsection{Backpropagation}
+
+We can compute the gradient of the cost function with respect to the parameters using
+the backpropagation algorithm~\cite{rumelhart_1986}. The key idea is to compute the
+error at the output layer and then propagate it backward through the network.
+
+The error is given by
+\begin{equation*}
+    \bm{\delta}^l = (\bm{W}^{l+1} \bm{\delta}^{l+1}) \odot \bm{f}'(\bm{z}^l),
+\end{equation*}
+where $\odot$ denotes the element-wise product, and $\bm{\delta}^l$ is the error at layer $l$.
+For $l=L$, we don't have a next layer, but for the two natural pairings of output layer and
+loss function (i.e., linear output with MSE loss and sigmoid output with binary cross-entropy loss),
+we have $\bm{\delta}^L = \bm{a}^L - \bm{y}$~\cite{hjorth-jensen_2026}.
+The gradients with respect to the weights and biases are then given by
+\begin{equation*}
+    \frac{\partial C}{\partial \bm{W}^l} = \bm{\delta}^l \bm{a}^{l-1}, \qquad
+    \frac{\partial C}{\partial \bm{b}^l} = \bm{\delta}^l.
+\end{equation*}
+
+Finally, we can update the parameters using gradient descent:
+\begin{equation*}
+    \bm{W}^l \leftarrow \bm{W}^l - \gamma \frac{\partial C}{\partial \bm{W}^l}, \qquad
+    \bm{b}^l \leftarrow \bm{b}^l - \gamma \frac{\partial C}{\partial \bm{b}^l},
+\end{equation*}
+where $\gamma$ is the learning rate.
 
 \subsubsection{Choice of output layer and loss function}
 % Identity with MSE gives regression while sigmoid or softmax with cross-entropy gives classification.
