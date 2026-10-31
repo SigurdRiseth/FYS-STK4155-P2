@@ -4,9 +4,17 @@
 % Present and discuss results together, ordered to match the structure of
 % \cref{sec:method}. Break into \subsection{}s as the content develops.
 
-% \begin{figure}[htbp]
-%     \centering
-%     \includegraphics[width=\linewidth]{figures/PLACEHOLDER.pdf}
-%     \caption{TODO.}
-%     \label{fig:placeholder}
-% \end{figure}
+\subsection{Linear regression}
+
+Comparing the best OLS model from the previous project, with two simple FFNN models
+results in the models shown in \cref{fig:model-comparison}.
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/model_comparison.pdf}
+     \caption{Comparison of OLS and two small FFNNs. The experiment used 100 samples
+     form Runge's function, with $\sigma=0.1$ and a test size of 20\%. The FFNN
+     models were trained using 100 epochs with a batch size of 32 and RMSProp with a
+     learning rate of 0.01.}
+     \label{fig:model-comparison}
+\end{figure}
