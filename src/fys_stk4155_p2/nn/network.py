@@ -3,6 +3,7 @@
 import copy
 
 import numpy as np
+from fys_stk4155_p1.optimization.optimizers import Optimizer
 from numpy.typing import NDArray
 
 from fys_stk4155_p2.nn.layers import Dense, Layer
@@ -12,7 +13,6 @@ from fys_stk4155_p2.nn.losses import (
     regularization_gradient,
     regularization_penalty,
 )
-from fys_stk4155_p2.optimization.optimizers import Optimizer
 
 
 def _as_2d(array: NDArray[np.float64]) -> NDArray[np.float64]:

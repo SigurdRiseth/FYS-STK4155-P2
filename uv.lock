@@ -779,10 +779,23 @@ wheels = [
 ]
 
 [[package]]
+name = "fys-stk4155-p1"
+version = "0.1.0"
+source = { git = "https://github.com/SigurdRiseth/FYS-STK4155-P1?tag=v0.1.0#91d7708f7b55cf160e2367c83ef21cb31b4aa17d" }
+dependencies = [
+    { name = "jax" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "scikit-learn" },
+]
+
+[[package]]
 name = "fys-stk4155-p2"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "fys-stk4155-p1" },
     { name = "jax" },
     { name = "matplotlib" },
     { name = "numpy" },
@@ -804,6 +817,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "fys-stk4155-p1", git = "https://github.com/SigurdRiseth/FYS-STK4155-P1?tag=v0.1.0" },
     { name = "jax", specifier = ">=0.11.2" },
     { name = "matplotlib", specifier = ">=3.11.1" },
     { name = "numpy", specifier = ">=2.5.2" },

@@ -9,6 +9,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "fys-stk4155-p1",
     "jax>=0.11.2",
     "matplotlib>=3.11.1",
     "numpy>=2.5.2",
@@ -66,3 +67,6 @@ addopts = "--cov=fys_stk4155_p2 --cov-report=term-missing"
 [tool.coverage.run]
 source = ["src"]
 branch = true
+
+[tool.uv.sources]
+fys-stk4155-p1 = { git = "https://github.com/SigurdRiseth/FYS-STK4155-P1", tag = "v0.1.0" }
