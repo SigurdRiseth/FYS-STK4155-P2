@@ -58,9 +58,7 @@ class Dense(Layer):
         self.weights: NDArray[np.float64] = rng.normal(
             loc=0.0, scale=std, size=(n_inputs, n_neurons)
         )
-        self.biases: NDArray[np.float64] = np.zeros(
-            (1, n_neurons)
-        )  # TODO: Initialize the bias to 0.01, ref. Hjorth-Jensen (2026) Section 8.10?
+        self.biases: NDArray[np.float64] = np.zeros((1, n_neurons))
 
         self.inputs: NDArray[np.float64] | None = None
         self.output: NDArray[np.float64] | None = None
