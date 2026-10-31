@@ -7,17 +7,29 @@
 
 % We should probably reference the first project \cite{riseth_2026} if we reuse code?
 
-We implemented all methods ourselves in Python using NumPy~\cite{harris_2020},
-with the full source code, tests, and experiment scripts available in the project
-repository~\cite{riseth_2026a}. Below, we cover the data, preprocessing,
-code structure, and how we verified the implementation.
+All methods were implemented from scratch in Python using NumPy~\cite{harris_2020}.
+The source code, unit tests, and experiment scripts are available in the project
+repository~\cite{riseth_2026a}. This section describes the datasets and preprocessing,
+the organization of the implementation, and the procedures used to verify correctness.
 
 \subsection{Data and preprocessing}\label{subsec:data}
 
-For the regression task we use Runge's function~\cite{runge_1901}.
+For the regression task, we use Runge's function~\cite{runge_1901}, a classical
+example for studying the bias--variance trade-off. It is defined as
+\begin{equation}\label{eq:runge-function}
+    f(x) = \frac{1}{1 + 25x^2}, \qquad x \in [-1,1].
+\end{equation}
+As observed in Project~1~\cite{riseth_2026}, polynomial regression can exhibit
+substantial oscillations near the endpoints of this interval. We generate
+$n=100$ input samples uniformly from $[-1,1]$, evaluate the function at these
+inputs, and add i.i.d. Gaussian noise with standard deviation
+$\sigma=0.1$ to obtain the observed targets.
 
-For the classification task we use the classic MNIST dataset~\cite{lecun_2010},
-a collection of 70\,000 handwritten digits and their corresponding labels (i.e., 0--9).
+For the classification task, we use the MNIST dataset~\cite{lecun_2010},
+which contains 70,000 grayscale images of handwritten digits, each of size
+$28 \times 28$ pixels, with labels corresponding to the ten classes
+$0,\ldots,9$. [Describe the train/test split and any preprocessing applied
+to the images, such as flattening, normalization, or label encoding.]
 
 \subsection{Code structure}\label{subsec:code-structure}
 

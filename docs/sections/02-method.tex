@@ -14,6 +14,10 @@ familiarity with basic linear algebra and statistics.
 % - Write out the gradient explicitly: $\nabla_\beta C = \frac{2}{n}X^\top(X\bm\beta - \bm y) + 2\lambda\bm\beta$. This sets up everything later.
 % - Introduce gradient descent here, with the closed form available as a check. That gives a clean place to define GD, SGD/mini-batches, momentum, RMSprop and Adam once.
 
+\subsubsection{Mean squared error}
+
+The mean squared error (MSE)
+
 \subsubsection{Gradient descent}\label{subsubsec:gradient-descent}
 
 \subsection{Logistic regression}\label{subsec:logistic-regression}
@@ -28,6 +32,10 @@ familiarity with basic linear algebra and statistics.
 Logistic regression is a natural choice as a baseline. It is a simple model in which
 everything can be computed, its cost function is convex, and it is exactly a neural
 network with no hidden layers~\cite{hjorth-jensen_2026}.
+
+\subsubsection{Binary cross entropy}
+
+\subsubsection{Categorical cross entropy}
 
 \subsection{Neural networks}\label{subsec:neural-networks}
 
@@ -188,12 +196,15 @@ where $\gamma$ is the learning rate.
 \subsubsection{Choice of output layer and loss function}
 % Identity with MSE gives regression while sigmoid or softmax with cross-entropy gives classification.
 % The two earlier models reappear as special cases of the output layer.
-
+% Mentioned what are "natural pairings" of output layer and loss function as mentioned before.
 
 \subsubsection{Weight initialization}
 %  Weight initialization, which is new since there was nothing to initialize with a closed form. This is where initializers.py fits in.
 
 \subsubsection{Regularization}
 % L2 regularization as weight decay, explicitly the same term as Ridge.
+
+A network with more parameters than data points available can fit the entire training set
+exactly, so applying regularization is essential~\cite{hjorth-jensen_2026}.
 
 \subsection{Evaluation}
