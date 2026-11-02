@@ -35,10 +35,11 @@ to the images, such as flattening, normalization, or label encoding.]
 
 We reuse the structure and the gradient machinery of the previous project~\cite{riseth_2026}.
 The code is structured in a package \texttt{fys\_stk4155\_p2}, containing the
-directories \texttt{nn}, \texttt{optimization}; which respectively hold the code for the
-models and gradient descent.
+directory \texttt{nn}; which holds the code for the models including activation functions,
+layers (\texttt{Dense}, \texttt{Linear}, etc.), the network class \texttt{FFNN}, and loss
+functions.
 
-Thin constructor of the FFNN for logistic regression, which returns a single layer with
+Thin constructor of the \texttt{FFNN} for logistic regression, which returns a single layer with
 softmax activation and cross entropy loss. This allows us to use this as a baseline model
 when evaluating the later neural networks.
 

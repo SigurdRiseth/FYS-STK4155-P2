@@ -201,6 +201,13 @@ where $\gamma$ is the learning rate.
 \subsubsection{Weight initialization}
 %  Weight initialization, which is new since there was nothing to initialize with a closed form. This is where initializers.py fits in.
 
+\begin{verbatim}
+if initialization == "he":
+    std = np.sqrt(2.0 / n_inputs)
+elif initialization in ("xavier", "glorot"):
+    std = np.sqrt(2.0 / (n_inputs + n_neurons))
+\end{verbatim}
+
 \subsubsection{Regularization}
 % L2 regularization as weight decay, explicitly the same term as Ridge.
 

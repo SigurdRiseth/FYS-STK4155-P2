@@ -4,17 +4,92 @@
 % Present and discuss results together, ordered to match the structure of
 % \cref{sec:method}. Break into \subsection{}s as the content develops.
 
-\subsection{Linear regression}
+This section presents and discusses the results from our experiments. First we
+cover the regression task, comparing linear regression to regression using FFNNs;
+afterward we cover the classification task of classifying handwritten digits
+using neural networks.
 
-Comparing the best OLS model from the previous project, with two simple FFNN models
-results in the models shown in \cref{fig:model-comparison}.
+\subsection{Regression}
+
+\subsubsection{Old-school approach}
+
+We compare the best OLS model from Project 1 with two FFNN architectures. The resulting
+predictions are shown in \cref{fig:model-comparison}. The OLS model exhibits pronounced
+oscillations near the boundaries of the input domain, whereas both neural networks provide
+smoother approximations of the underlying function. This illustrates one limitation of polynomial
+regression: its predictions can become unstable near the boundaries, particularly when
+using higher-degree polynomials. In contrast, the FFNNs learn the function directly from
+the input features, without requiring us to specify a polynomial design matrix. The input
+to the neural networks is therefore simply the one-dimensional feature matrix
+$\bm{X} \in \mathbb{R}^{n \times 1}$.
 
 \begin{figure}[htbp]
      \centering
      \includegraphics[width=\linewidth]{figures/regression/model_comparison.pdf}
-     \caption{Comparison of OLS and two small FFNNs. The experiment used 100 samples
-     form Runge's function, with $\sigma=0.1$ and a test size of 20\%. The FFNN
-     models were trained using 100 epochs with a batch size of 32 and RMSProp with a
-     learning rate of 0.01.}
+     \caption{Comparison of OLS and two FFNN architectures when approximating
+          Runge's function. The data consist of 100 noisy samples with
+          $\sigma=0.1$, with 20\% reserved for testing. Both FFNNs were trained
+          for 1000 epochs using RMSProp, a learning rate of $0.001$, and a
+          batch size of 32.}
      \label{fig:model-comparison}
 \end{figure}
+
+The quantitative results are presented in \cref{tab:regression}. The FFNN with two hidden
+layers of 100 neurons achieves the lowest MSE relative to the true function, outperforming the
+one-hidden-layer FFNN and OLS by factors of approximately 2 and 10, respectively.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Training and test performance of OLS and two FFNN architectures
+          on Runge's function.}
+    \label{tab:regression}
+    {\footnotesize\setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}lccccc@{}}
+        \toprule
+        & train MSE & test MSE & train $R^2$ & test $R^2$ & MSE vs $f$ \\
+        \midrule
+        OLS ($p=12$) & $0.0081$ & $0.0086$ & $0.9207$ & $0.6280$ & $0.0125$ \\
+        FFNN ($50$) & $0.0097$ & $0.0092$ & $0.9053$ & $0.5996$ & $0.0020$ \\
+        FFNN ($100, 100$) & $0.0089$ & $0.0085$ & $0.9136$ & $0.6315$ & $0.0012$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+Interestingly, OLS achieves the lowest training MSE, but this does not translate into the
+best approximation of the underlying function. The discrepancy between its training and
+test performance, together with the oscillations visible in \cref{fig:model-comparison},
+suggests that the polynomial model is sensitive to the noise in the training data and
+exhibits overfitting. The FFNN models provide a better approximation of the true function,
+despite both having a slightly higher training MSE.
+
+The cost of choosing a larger neural network is shown in \cref{fig:training-history},
+where we can see how the larger models gets stuck at a plateau around $10^{-1}$ for a
+large period of the training. At this plateau, the model is predicting the mean of Runges
+function, and the gradient pointing towards useful curved features is tiny. This is the
+well-known plateau behavior of sigmoid networks~\cite{saxe_2014}, which can be avoided
+by using ReLU, or its variants, or applying batch normalization.
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/history.pdf}
+     \caption{Training history for both FFNN models.}
+     \label{fig:training-history}
+\end{figure}
+
+Meanwhile, in \cref{fig:optimizer-curves}, we can see how Adam and RMSProp escape much
+sooner than plain gradient descent at the same learning rate. Additionally, a higher
+learning rate escapes the plateau faster and reaches the optimum faster but with
+noticeably more noise. This is a clear advocate for learning rate scheduling which we
+will use in later parts of this project.
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/optimizer_curves.pdf}
+     \caption{Optimizer curves.}
+     \label{fig:optimizer-curves}
+\end{figure}
+
+\subsubsection{The ReLU-family, larger networks and overfitting}
+
+Now we explore how the ReLU and its Leaky ReLU variant perform, and how larger
+networks ...
