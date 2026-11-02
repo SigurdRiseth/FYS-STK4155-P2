@@ -54,3 +54,6 @@ docs/*.fls
 docs/*.fdb_latexmk
 docs/*.synctex.gz
 docs/*.gz
+
+# Assignment
+Project2.ipynb
