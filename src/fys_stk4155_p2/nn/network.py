@@ -63,6 +63,7 @@ class FFNN:
         self._dense_layers = [layer for layer in layers if isinstance(layer, Dense)]
         self._optimizers: list[tuple[Optimizer, Optimizer]] = []
         self._ravel_output = False
+        self.validation_history: list[float] = []
 
     def _forward(self, inputs: NDArray[np.float64]) -> NDArray[np.float64]:
         """Compute a forward pass through all layers.
@@ -131,6 +132,7 @@ class FFNN:
         y: NDArray[np.float64],
         epochs: int = 100,
         batch_size: int | None = None,
+        validation_data: tuple[NDArray[np.float64], NDArray[np.float64]] | None = None,
     ) -> list[float]:
         """Train the network with (stochastic) gradient descent.
 
@@ -139,18 +141,23 @@ class FFNN:
         (full-batch) gradient descent. Calling ``fit`` again continues training from the
         current weights, with fresh optimizer state.
 
+        If ``validation_data`` is given, the cost on it is recorded after each epoch in
+        ``validation_history``, which is reset at the start of every call. The validation
+        data is never used to update the weights.
+
         Args:
             X: Input data, shape (n_samples,) or (n_samples, n_features).
             y: Targets, shape (n_samples,) or (n_samples, n_outputs).
             epochs: Number of passes over the training data.
             batch_size: Number of samples per minibatch, or None for full-batch.
+            validation_data: Optional pair (X_val, y_val), shaped like ``X`` and ``y``.
 
         Returns:
             The cost on the full training data after each epoch.
 
         Raises:
-            ValueError: If ``X`` and ``y`` have different numbers of samples, or if
-                ``epochs`` or ``batch_size`` is not positive.
+            ValueError: If ``X`` and ``y``, or ``X_val`` and ``y_val``, have different
+                numbers of samples, or if ``epochs`` or ``batch_size`` is not positive.
         """
         X = _as_2d(X)
         self._ravel_output = np.ndim(y) == 1
@@ -161,6 +168,13 @@ class FFNN:
             raise ValueError(
                 f"X and y must have the same number of samples, got {n_samples} and {y.shape[0]}."
             )
+        if validation_data is not None:
+            X_val, y_val = (_as_2d(array) for array in validation_data)
+            if y_val.shape[0] != X_val.shape[0]:
+                raise ValueError(
+                    "X_val and y_val must have the same number of samples, "
+                    f"got {X_val.shape[0]} and {y_val.shape[0]}."
+                )
         if epochs <= 0:
             raise ValueError(f"epochs must be positive, got {epochs}.")
         if batch_size is None:
@@ -174,6 +188,7 @@ class FFNN:
         ]
         rng = np.random.default_rng(self.seed)
         history = []
+        self.validation_history = []
 
         for _ in range(epochs):
             indices = rng.permutation(n_samples)
@@ -184,6 +199,8 @@ class FFNN:
                 self._update()
 
             history.append(float(self.cost(X, y)))
+            if validation_data is not None:
+                self.validation_history.append(float(self.cost(X_val, y_val)))
 
         return history
 
