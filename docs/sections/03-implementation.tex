@@ -33,14 +33,50 @@ to the images, such as flattening, normalization, or label encoding.]
 
 \subsection{Code structure}\label{subsec:code-structure}
 
-We reuse the structure and the gradient machinery of the previous project~\cite{riseth_2026}.
+We reuse the structure and the gradient machinery of the previous project~\cite{riseth_2026},
+which is summarized in \cref{alg:gd}.
 The code is structured in a package \texttt{fys\_stk4155\_p2}, containing the
 directory \texttt{nn}; which holds the code for the models including activation functions,
 layers (\texttt{Dense}, \texttt{Linear}, etc.), the network class \texttt{FFNN}, and loss
 functions.
+
+\begin{algorithm}
+    \caption{Gradient descent with a generic update rule}
+    \label{alg:gd}
+    {\small
+    \begin{algorithmic}[1]
+        \Require $\bm{\theta}^{(0)}$, schedule $\gamma_t$, batch size $M$
+        ($M = n_\text{tr}$: full batch), epochs $E$, tolerance $\tau$,
+        update rule $\mathcal{U}$ with state $\bm{s}$
+        \State $t \gets 0$, $\bm{s} \gets \bm{0}$
+        \For{$e = 1, \dots, E$}
+            \State Shuffle the training rows; split into $\lceil n_\text{tr}/M\rceil$ batches
+            \For{each batch $\mathcal{B}$}
+                \State $\bm{g} \gets \frac{1}{|\mathcal{B}|}\sum_{i\in\mathcal{B}}
+                \nabla_{\bm{\theta}} c_i(\bm{\theta}^{(t)})$ \Comment{analytical or JAX}
+                \If{$M = n_\text{tr}$ \textbf{and} $\lVert\bm{g}\rVert_\infty < \tau$}
+                    \State \Return $\bm{\theta}^{(t)}$
+                \EndIf
+                \State $(\bm{\theta}^{(t+1)}, \bm{s}) \gets
+                \mathcal{U}(\bm{\theta}^{(t)}, \bm{g}, \gamma_t, \bm{s})$
+                \Comment{e.g.\ \cref{eq:gd-basic,eq:adam-iterate}}
+                \State $t \gets t + 1$
+            \EndFor
+        \EndFor
+        \State \Return $\bm{\theta}^{(t)}$
+    \end{algorithmic}
+    }
+\end{algorithm}
 
 Thin constructor of the \texttt{FFNN} for logistic regression, which returns a single layer with
 softmax activation and cross entropy loss. This allows us to use this as a baseline model
 when evaluating the later neural networks.
 
 \subsection{Verification}\label{subsec:verification}
+
+The developed package has a test suite which checks the code against closed-form results
+and independent implementations:
+
+\begin{itemize}
+    \item
+\end{itemize}
