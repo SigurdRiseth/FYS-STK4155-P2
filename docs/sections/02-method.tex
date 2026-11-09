@@ -5,14 +5,133 @@
 % linear algebra and statistics. Break into \subsection{}s as the content
 % develops, e.g. one per model/algorithm.
 
-This section presents the models, linear regression, logistic regression, and
-neural networks, and finally the evaluation methods used. We assume the reader has
+This section presents the cost functions and the gradient-based methods used to
+minimize them, then the models, linear regression, logistic regression, and neural
+networks, and finally the evaluation methods used. We assume the reader has
 familiarity with basic linear algebra and statistics.
+
+\subsection{Cost functions and their gradients}\label{subsec:cost-functions}
+% Part a): set up each cost with and without the L1 and L2 penalties, its gradient,
+% and explain the terms.
+
+\subsubsection{Mean squared error}
+For regression, we measure the fit of the predictions $\tilde{y}_i$ to the targets
+$y_i$ by the mean squared error,
+\begin{equation}\label{eq:mse-cost}
+    C_\text{MSE} = \frac{1}{n}\sum_{i=0}^{n-1}\left(y_i - \tilde{y}_i\right)^2,
+\end{equation}
+the same quantity that OLS minimizes. Squaring the
+residuals penalizes large errors heavily, and up to constants the MSE is the negative
+log-likelihood of Gaussian noise as in \cref{eq:data-generating-process}~\cite{goodfellow_2016}.
+Its derivative with respect to a prediction is
+\begin{equation}\label{eq:mse-gradient}
+    \frac{\partial C_\text{MSE}}{\partial \tilde{y}_i} = \frac{2}{n}\left(\tilde{y}_i - y_i\right),
+\end{equation}
+which is all that backpropagation needs from the cost. For the linear model
+$\tilde{\bm{y}} = \bm{X}\bm{\theta}$, the chain rule recovers
+$\nabla_{\bm{\theta}} C_\text{MSE} = \frac{2}{n}\bm{X}^\top(\bm{X}\bm{\theta} - \bm{y})$.
+
+\paragraph{Penalties} Any of the costs in this section can be extended with an $\ell_2$ or
+$\ell_1$ penalty on the weight matrices $\bm{W}^l$ of the network,
+\begin{equation}\label{eq:penalties}
+    C_{\ell_2} = C + \lambda\sum_{l}\lVert \bm{W}^l\rVert_2^2, \qquad
+    C_{\ell_1} = C + \lambda\sum_{l}\lVert \bm{W}^l\rVert_1,
+\end{equation}
+with the norms taken element-wise and $\lambda \geq 0$. The penalties add $2\lambda\bm{W}^l$
+and $\lambda\operatorname{sign}(\bm{W}^l)$ to the gradient, respectively. As for Lasso, the
+$\ell_1$ penalty is not differentiable at zero, and we use $\operatorname{sign}(0) = 0$,
+the minimal-norm subgradient. For the linear model, these are the Ridge and Lasso costs of
+\cref{subsec:linear-regression}.
+
+\subsubsection{Binary cross entropy}
+
+\subsubsection{Categorical cross entropy}
+
+\subsection{Gradient-based optimization}\label{subsec:optimization}
+
+Apart from OLS and Ridge regression, none of the costs in this report have a
+closed-form minimizer, so we minimize them iteratively with gradient descent (GD).
+For a differentiable cost $C(\bm{\theta})$, GD iterates
+\begin{equation}\label{eq:gd-basic}
+    \bm{\theta}^{(k+1)} = \bm{\theta}^{(k)} - \gamma
+    \nabla_{\bm{\theta}} C\big(\bm{\theta}^{(k)}\big),
+\end{equation}
+with learning rate $\gamma > 0$, at the cost of one gradient evaluation per
+iteration~\cite{hjorth-jensen_2026}.
+
+\paragraph{Momentum}
+
+Momentum adds a fraction $\beta \in [0, 1)$ of the previous step to the current one,
+\begin{equation}\label{eq:gd-momentum}
+    \bm{v}^{(k)} = \beta\bm{v}^{(k-1)} + \gamma\nabla_{\bm{\theta}}
+    C\big(\bm{\theta}^{(k)}\big), \qquad
+    \bm{\theta}^{(k+1)} = \bm{\theta}^{(k)} - \bm{v}^{(k)},
+\end{equation}
+with $\bm{v}^{(0)} = \bm{0}$. Steps along directions where the gradient keeps its sign
+accumulate, while oscillations across a narrow valley partly cancel, which helps on
+ill-conditioned costs~\cite{goodfellow_2016,hjorth-jensen_2026}.
+
+\paragraph{Adaptive learning rates}
+
+Adaptive methods give each parameter its own effective learning rate. AdaGrad~\cite{duchi_2011}
+divides the step of each coordinate by the root of its accumulated squared gradients,
+so the effective step can only decrease. RMSprop replaces the sum by an exponentially
+decaying average,
+\begin{align}\label{eq:rmsprop-iterate}
+    \bm{v}^{(k)} &= \rho\bm{v}^{(k-1)} + (1-\rho)\,\bm{g}^{(k)}\odot\bm{g}^{(k)},\nonumber \\
+    \bm{\theta}^{(k+1)} &= \bm{\theta}^{(k)} - \frac{\gamma}{\sqrt{\bm{v}^{(k)}}
+    + \epsilon}\odot\bm{g}^{(k)},
+\end{align}
+so the step size can recover~\cite{goodfellow_2016}. Here $\bm{g}^{(k)}$ is the gradient,
+$\odot$ the Hadamard product, and the square root and division are element-wise.
+Adam~\cite{kingma_2017} combines a decaying average of the gradient, as in momentum,
+with the scaling of RMSprop, and corrects both averages for their initialization at zero:
+\begin{align}\label{eq:adam-iterate}
+    \bm{m}^{(k)} &= \beta_1\bm{m}^{(k-1)} + (1-\beta_1)\,\bm{g}^{(k)},\nonumber \\
+    \bm{v}^{(k)} &= \beta_2\bm{v}^{(k-1)} + (1-\beta_2)\,\bm{g}^{(k)}\odot\bm{g}^{(k)},\nonumber \\
+    \bm{\theta}^{(k+1)} &= \bm{\theta}^{(k)} - \gamma\,
+    \frac{\bm{m}^{(k)}/(1-\beta_1^{k})}{\sqrt{\bm{v}^{(k)}/(1-\beta_2^{k})}+\epsilon}.
+\end{align}
+We use $\rho = 0.9$ for RMSprop, $\beta_1 = 0.9$ and $\beta_2 = 0.999$ for Adam, and
+$\epsilon = 10^{-8}$. Since Adam divides by the running root-mean-square of the gradient,
+its steps do not shrink with the gradient near a minimum, and with a fixed $\gamma$ it keeps
+taking steps of order $\gamma$ there.
+
+\paragraph{Stochastic gradient descent}
+
+For a cost that is an average over the data, $C(\bm{\theta}) = \frac{1}{n}
+\sum_i c_i(\bm{\theta})$, stochastic gradient descent (SGD) replaces the full
+gradient by the average over a mini-batch $\mathcal{B}_k$ of $M$ points,
+\begin{equation}
+    \bm{g}^{(k)} = \frac{1}{M}\sum_{i\in\mathcal{B}_k}\nabla_{\bm{\theta}}
+    c_i\big(\bm{\theta}^{(k)}\big).
+\end{equation}
+This is an unbiased estimate of the full gradient~\cite{goodfellow_2016}. We
+shuffle the training set once per epoch and split it into $\lceil n_\text{tr}/M
+\rceil$ mini-batches, so one epoch costs the same number of floating-point
+operations as one full-batch step but makes $\lceil n_\text{tr}/M\rceil$
+updates. The gradient noise does not vanish at the minimum, so with a fixed
+learning rate the iterates fluctuate around it; a decaying learning rate,
+here $\gamma_t = \gamma_0/(1+ \delta t)$ or $\gamma_t = \gamma_0 e^{-\delta t}$
+with $t$ the number of updates, damps these fluctuations~\cite{hjorth-jensen_2026}.
+Any of the update rules above can be applied to $\bm{g}^{(k)}$.
+
+\paragraph{Early stopping}
+% Stop when the validation cost has not improved for a number of epochs (the
+% patience) and restore the best weights; a form of regularization.
+
+Early stopping is a form of regularization that limits overfitting by
+terminating training when performance on a validation set ceases to
+improve~\cite{hjorth-jensen_2026}. While the training loss may continue
+to decrease, an increasing validation loss can indicate that the model
+is beginning to overfit the training data~\cite{geron_2023}. We therefore
+monitor the validation loss throughout training and stop if it has not
+decreased for five consecutive epochs. The model weights are subsequently
+restored to those obtained at the epoch with the lowest validation loss.
 
 \subsection{Linear regression}\label{subsec:linear-regression}
 % - Model $\hat{\bm y} = X\bm\beta$, MSE loss, the OLS and Ridge closed forms.
 % - Write out the gradient explicitly: $\nabla_\beta C = \frac{2}{n}X^\top(X\bm\beta - \bm y) + 2\lambda\bm\beta$. This sets up everything later.
-% - Introduce gradient descent here, with the closed form available as a check. That gives a clean place to define GD, SGD/mini-batches, momentum, RMSprop and Adam once.
 
 Given a dataset of $n$ samples $\mathcal{D}=\{ (y_i,x_i) \}^{n-1}_{i=0}$ and assuming
 that the targets $y_i$ are generated by
@@ -64,56 +183,9 @@ Lasso~\cite{tibshirani_1996} instead applies an $\ell_1$ penalty,
     + \lambda \lVert \bm{\theta} \rVert_1 .
 \end{equation}
 The cost is convex but not differentiable where a coefficient is zero, and it
-has no closed-form minimizer~\cite{mehta_2019}. Lasso performs variable selection while
-Ridge only shrinks~\cite{hjorth-jensen_2026}.
-
-\subsubsection{Gradient descent}
-
-As a result of the cost not being differentiable, we have to perform gradient descent (GD)
-in order to find a solution that minimizes the cost. For a differentiable cost $C(\bm{\theta})$,
-GD iterates
-\begin{equation}\label{eq:gd-basic}
-    \bm{\theta}^{(k+1)} = \bm{\theta}^{(k)} - \gamma
-    \nabla_{\bm{\theta}} C\big(\bm{\theta}^{(k)}\big),
-\end{equation}
-with learning rate $\gamma > 0$, at the cost of one gradient evaluation per
-iteration~\cite{hjorth-jensen_2026}.
-
-\paragraph{Adaptive learning rates}
-
-Instead of using a fixed learning rate, adaptive methods ...
-
-\paragraph{Stochastic gradient descent}
-
-For a cost that is an average over the data, $C(\bm{\theta}) = \frac{1}{n}
-\sum_i c_i(\bm{\theta})$, stochastic gradient descent (SGD) replaces the full
-gradient by the average over a mini-batch $\mathcal{B}_k$ of $M$ points,
-\begin{equation}
-    \bm{g}^{(k)} = \frac{1}{M}\sum_{i\in\mathcal{B}_k}\nabla_{\bm{\theta}}
-    c_i\big(\bm{\theta}^{(k)}\big).
-\end{equation}
-This is an unbiased estimate of the full gradient~\cite{goodfellow_2016}. We
-shuffle the training set once per epoch and split it into $\lceil n_\text{tr}/M
-\rceil$ mini-batches, so one epoch costs the same number of floating-point
-operations as one full-batch step but makes $\lceil n_\text{tr}/M\rceil$
-updates. The gradient noise does not vanish at the minimum, so with a fixed
-learning rate the iterates fluctuate around it; a decaying learning rate,
-here $\gamma_t = \gamma_0/(1+ \delta t)$ with $t$ the number of updates, damps
-these fluctuations~\cite{hjorth-jensen_2026}. Any of the
-update rules above can be applied to $\bm{g}^{(k)}$.
-
-\subsubsection{Evaluation metrics}
-
-We evaluate a prediction $\tilde{\bm{y}}$ of targets $\bm{y}$ by
-\begin{equation}
-    \mathrm{MSE} = \frac{1}{n}\sum_{i}(y_i-\tilde{y}_i)^2, \quad
-    R^2 = 1 - \frac{\sum_i (y_i - \tilde{y}_i)^2}{\sum_i (y_i - \bar{y})^2},
-\end{equation}
-with $\bar{y}$ the mean of $\bm{y}$. An unbiased model with no variance reaches
-$\mathrm{MSE} = \sigma^2$ in expectation; $R^2$ compares against predicting
-$\bar{y}$ and is negative for a model that does worse than that constant~\cite{hjorth-jensen_2026}.
-
-\subsubsection{Gradient descent}\label{subsubsec:gradient-descent}
+has no closed-form minimizer~\cite{mehta_2019}, so it is minimized with the methods of
+\cref{subsec:optimization}. Lasso performs variable selection while Ridge only
+shrinks~\cite{hjorth-jensen_2026}.
 
 \subsection{Logistic regression}\label{subsec:logistic-regression}
 
@@ -126,11 +198,8 @@ $\bar{y}$ and is negative for a model that does worse than that constant~\cite{h
 
 Logistic regression is a natural choice as a baseline. It is a simple model in which
 everything can be computed, its cost function is convex, and it is exactly a neural
-network with no hidden layers~\cite{hjorth-jensen_2026}.
-
-\subsubsection{Binary cross entropy}
-
-\subsubsection{Categorical cross entropy}
+network with no hidden layers~\cite{hjorth-jensen_2026}. Its cost is the binary or
+categorical cross entropy of \cref{subsec:cost-functions}.
 
 \subsection{Neural networks}\label{subsec:neural-networks}
 
@@ -204,7 +273,7 @@ $\bm{\Theta}=\{\bm{w}^l, \bm{b}^l\}_{l=1}^L$, and write the optimization problem
 \end{equation}
 where $L$ is the cost function and $\Omega$ is the regularization term~\cite{hjorth-jensen_2026}.
 This is a non-convex optimization problem, so there is no closed-form solution, and we must
-resort to the gradient-based methods reported in \cref{subsubsec:gradient-descent} to find
+resort to the gradient-based methods reported in \cref{subsec:optimization} to find
 a local minimum.
 
 \subsubsection{Activation functions}
@@ -309,4 +378,16 @@ elif initialization in ("xavier", "glorot"):
 A network with more parameters than data points available can fit the entire training set
 exactly, so applying regularization is essential~\cite{hjorth-jensen_2026}.
 
-\subsection{Evaluation}
+\subsection{Evaluation}\label{subsec:evaluation}
+
+For regression, we evaluate a prediction $\tilde{\bm{y}}$ of targets $\bm{y}$ by
+\begin{equation}
+    \mathrm{MSE} = \frac{1}{n}\sum_{i}(y_i-\tilde{y}_i)^2, \quad
+    R^2 = 1 - \frac{\sum_i (y_i - \tilde{y}_i)^2}{\sum_i (y_i - \bar{y})^2},
+\end{equation}
+with $\bar{y}$ the mean of $\bm{y}$. An unbiased model with no variance reaches
+$\mathrm{MSE} = \sigma^2$ in expectation; $R^2$ compares against predicting
+$\bar{y}$ and is negative for a model that does worse than that constant~\cite{hjorth-jensen_2026}.
+
+% Classification: accuracy, precision, recall, F1 (macro-averaged) and the
+% confusion matrix.

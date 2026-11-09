@@ -7,7 +7,7 @@
 This section presents and discusses the results from our experiments. First we
 cover the regression task, comparing linear regression to regression using FFNNs;
 afterward we cover the classification task of classifying handwritten digits
-using neural networks.
+using neural networks. Finally, we evaluate the methods critically across both tasks.
 
 \subsection{Regression}
 
@@ -44,7 +44,7 @@ one-hidden-layer FFNN and OLS by factors of roughly 1.7 and 10, respectively.
     {\footnotesize\setlength{\tabcolsep}{4pt}
     \begin{tabular}{@{}lccccc@{}}
         \toprule
-        & Train MSE & Test MSE & Train $R^2$ & Test $R^2$ & MSE vs $f$ \\
+        Model & Train MSE & Test MSE & Train $R^2$ & Test $R^2$ & MSE vs $f$ \\
         \midrule
         OLS ($p=12$) & $0.0081$ & $0.0086$ & $0.9207$ & $0.6280$ & $0.0125$ \\
         FFNN ($50$) & $0.0097$ & $0.0092$ & $0.9053$ & $0.5996$ & $0.0020$ \\
@@ -66,7 +66,8 @@ the variance of the training targets ($0.103$), for a large period of the traini
 this plateau, the model is predicting the mean of the data, and the gradient pointing
 towards useful curved features is tiny. This is the well-known plateau behavior of
 sigmoid networks~\cite{saxe_2014}, which can be avoided by using ReLU, or its variants,
-or applying batch normalization.
+or applying batch normalization. \textbf{[HOW TRUE IS THE "COST" PART??? THEY USE
+DIFFERENT LEARNING RATES, OPTIMIZERS AND EPOCH COUNTS!!!]}
 
 \begin{figure}[htbp]
      \centering
@@ -127,13 +128,13 @@ give smooth curves, which may suit Runge's function better.
           cross-validated MSE for each activation function.}
     \label{tab:activation-comparison}
     {\footnotesize\setlength{\tabcolsep}{4pt}
-    \begin{tabular}{@{}lccccc@{}}
+    \begin{tabular}{@{}lcccc@{}}
         \toprule
-        & Train MSE & Test MSE & Train $R^2$ & Test $R^2$ & MSE vs $f$ \\
+        Activation & Train MSE & Test MSE & Test $R^2$ & MSE vs $f$ \\
         \midrule
-        Sigmoid ($1 \times 80$) & $0.0091$ & $0.0076$ & $0.9110$ & $0.6684$ & $0.0015$ \\
-        ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.9196$ & $0.6513$ & $0.0022$ \\
-        Leaky ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.9193$ & $0.6504$ & $0.0021$ \\
+        Sigmoid ($1 \times 80$) & $0.0091$ & $0.0076$ & $0.6684$ & $0.0015$ \\
+        ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.6513$ & $0.0022$ \\
+        Leaky ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.6504$ & $0.0021$ \\
         \bottomrule
     \end{tabular}}
 \end{table}
@@ -153,13 +154,6 @@ give smooth curves, which may suit Runge's function better.
 
 \subsection{Image classification}
 
-The MNIST dataset~\cite{lecun_2010} consists of 70\,000 grayscale images of
-$28 \times 28$ pixels, split into 60\,000 training and 10\,000 test images. We flatten
-each image to a vector of 784 features scaled to $[0, 1]$, and set aside a stratified
-validation set of 10\,000 training images. All hyperparameters are selected on the
-validation set; the test set is used only once, for the final comparison of the
-selected models.
-
 \subsubsection{Logistic regression}
 
 To judge whether hidden layers are worth their cost, we first need a baseline.
@@ -168,25 +162,9 @@ layer maps the 784 pixels to 10 logits, followed by the softmax and the cross en
 The model cannot learn features of its own, so each class score is a weighted sum of
 the raw pixel values.
 
-The selected model reaches a test accuracy of 92.6\% (\cref{tab:logreg-accuracy}), in
+The selected model reaches a test accuracy of 92.6\% (\cref{tab:classification-accuracy}), in
 line with the roughly 92\% expected for logistic regression on raw pixels, and far
 above the 11.4\% obtained by always predicting the most common digit.
-
-\begin{table}[htbp]
-    \centering
-    \caption{Test accuracy of the logistic regression baseline.}
-    \label{tab:logreg-accuracy}
-    {\footnotesize\setlength{\tabcolsep}{4pt}
-    \begin{tabular}{@{}lc@{}}
-        \toprule
-        Model & Test accuracy \\
-        \midrule
-        Majority class & 0.1135 \\
-        Logistic regression (ours) & 0.9261 \\
-        Logistic regression (Scikit-learn) & 0.9218 \\
-        \bottomrule
-    \end{tabular}}
-\end{table}
 
 The accuracy hides significant differences between the digits. The confusion matrix in
 \cref{fig:logreg-matrix} shows a recall of about 97\% for 0 and 1, but only 87\% for 5
@@ -212,3 +190,75 @@ Learning features that handle this kind of variation is what we expect hidden la
      it.}
      \label{fig:logreg-weights}
 \end{figure*}
+
+\subsubsection{Neural networks}
+
+For the FFNN, we use our validation set for model selection and tuning of hyperparameters.
+The search space defined in \cref{tab:classification-hyperparameter-search} was searched
+for 10 epochs and the best performing model on the validation set was selected.
+We see that the best performing model is the largest possible ReLU network, with a
+moderate learning rate, allowing the network to capture complex features of the images.
+This also illustrates a weakness of our experiment, as an even larger model might have
+performed even better.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Classification FFNN hyperparameter search space and selected
+    configuration based on validation performance.}
+    \label{tab:classification-hyperparameter-search}
+    \footnotesize
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        Hyperparameter & Search space & Selected \\
+        \midrule
+        Number of layers
+            & $\{4, 8\}$ & $8$ \\
+        Nodes per layer
+            & $\{40, 80, 160\}$ & $160$ \\
+        Learning rate ($\gamma$)
+            & $\{10^{-5}, 10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}\}$
+            & $10^{-3}$ \\
+        Activation function
+            & Sigmoid, ReLU, Leaky ReLU & ReLU \\
+        $\ell_2$ regularization ($\lambda$)
+            & $\{10^{-1}, 10^{-2}, 10^{-3}, 10^{-4}, 0\}$
+            & $0$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The hyperparameter search's various architecture performances are summarized in
+\cref{fig:hyperparameter-search}, where each combination of activation function and
+number of hidden layers and nodes has its best validation accuracy and the learning
+rate which gave it listed. Here we see that both ReLU and Leaky ReLU prefer the
+larger networks, but the gains are marginal ($0.5\%$ validation accuracy gain from
+$4\times 40$ vs.\ $8 \times 160$).
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/classification/ffnn_architectures.pdf}
+     \caption{.}
+     \label{fig:hyperparameter-search}
+\end{figure}
+
+The final model was retrained for 30 epochs, tracking the validation cost for identifying
+potential overfitting.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Test accuracy and macro-averaged F1 score of the classification models.}
+    \label{tab:classification-accuracy}
+    {\footnotesize\setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}lcc@{}}
+        \toprule
+        Model & Accuracy & Macro-averaged F1 \\
+        \midrule
+        Majority class & 0.1135 & \\
+        Logistic regression & 0.9261 & \\
+        FFNN & 0.9786 & 0.9783 \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+\subsection{Critical evaluation}

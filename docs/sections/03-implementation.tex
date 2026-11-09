@@ -26,10 +26,13 @@ inputs, and add i.i.d. Gaussian noise with standard deviation
 $\sigma=0.1$ to obtain the observed targets.
 
 For the classification task, we use the MNIST dataset~\cite{lecun_2010},
-which contains 70,000 grayscale images of handwritten digits, each of size
+which contains 70\,000 grayscale images of handwritten digits, each of size
 $28 \times 28$ pixels, with labels corresponding to the ten classes
-$0,\ldots,9$. [Describe the train/test split and any preprocessing applied
-to the images, such as flattening, normalization, or label encoding.]
+$0,\ldots,9$, split into 60\,000 training and 10\,000 test images. We flatten
+each image to a vector of 784 features scaled to $[0, 1]$, and set aside a stratified
+validation set of 10\,000 training images. All hyperparameters are selected on the
+validation set; the test set is used only once, for the final comparison of the
+selected models.
 
 \subsection{Code structure}\label{subsec:code-structure}
 
@@ -71,6 +74,10 @@ functions.
 Thin constructor of the \texttt{FFNN} for logistic regression, which returns a single layer with
 softmax activation and cross entropy loss. This allows us to use this as a baseline model
 when evaluating the later neural networks.
+
+\subsection{Hyperparameter search}\label{subsec:hyperparameter-search}
+% Regression: k-fold CV over the grids. Classification: grids scored on the
+% validation set, max epochs, patience, learning rate schedule, batch size and seed.
 
 \subsection{Verification}\label{subsec:verification}
 
