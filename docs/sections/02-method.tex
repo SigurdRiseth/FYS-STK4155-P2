@@ -29,10 +29,48 @@ Its derivative with respect to a prediction is
 \end{equation}
 which is all that backpropagation needs from the cost. For the linear model
 $\tilde{\bm{y}} = \bm{X}\bm{\theta}$, the chain rule recovers
-$\nabla_{\bm{\theta}} C_\text{MSE} = \frac{2}{n}\bm{X}^\top(\bm{X}\bm{\theta} - \bm{y})$.
+\begin{equation}\label{eq:ols-grad}
+    \nabla_{\bm{\theta}} C_\text{MSE} =
+    \frac{2}{n}\bm{X}^\top(\bm{X}\bm{\theta} - \bm{y}).
+\end{equation}
 
-\paragraph{Penalties} Any of the costs in this section can be extended with an $\ell_2$ or
-$\ell_1$ penalty on the weight matrices $\bm{W}^l$ of the network,
+\subsubsection{Binary cross entropy}
+
+For binary classification with labels $y_i \in \{0, 1\}$, we replace the Gaussian noise
+model of regression by a Bernoulli model. The model outputs a logit $z_i$, and the sigmoid
+maps it to the probability of the positive class, $p_i = \sigma(z_i) = P(y_i = 1 \mid
+\bm{x}_i)$, so that the negative class has probability $1 - p_i$. For independent samples,
+the likelihood of the data given the parameters $\bm{\theta}$ is
+\begin{equation}\label{eq:bernoulli-likelihood}
+    P(\mathcal{D} \mid \bm{\theta}) = \prod_{i=0}^{n-1} p_i^{y_i}(1 - p_i)^{1 - y_i},
+\end{equation}
+and minimizing its negative logarithm, averaged over the samples, gives the binary cross
+entropy (BCE)~\cite{goodfellow_2016,hjorth-jensen_2026},
+\begin{equation}\label{eq:bce-cost}
+    C_\text{BCE} = -\frac{1}{n}\sum_{i=0}^{n-1}
+    \left[y_i \log p_i + (1 - y_i)\log(1 - p_i)\right].
+\end{equation}
+A confident, correct prediction contributes almost nothing, while the cost grows without
+bound as the model becomes confidently wrong. Since $\sigma'(z) = \sigma(z)(1 - \sigma(z))$,
+the derivative with respect to a logit is
+\begin{equation}\label{eq:bce-gradient}
+    \frac{\partial C_\text{BCE}}{\partial z_i} = \frac{1}{n}\left(p_i - y_i\right).
+\end{equation}
+The derivative of the sigmoid has cancelled, so as for the MSE in \cref{eq:mse-gradient}
+the gradient is proportional to the residual, and it does not vanish when the sigmoid
+saturates. For logistic regression, $\bm{z} = \bm{X}\bm{\theta}$, and the chain rule gives
+\begin{equation}\label{eq:bce-grad-theta}
+    \nabla_{\bm{\theta}} C_\text{BCE} = \frac{1}{n}\bm{X}^\top(\bm{p} - \bm{y}),
+\end{equation}
+which has the form of \cref{eq:ols-grad} with the linear prediction $\bm{X}\bm{\theta}$
+replaced by the probabilities $\bm{p}$. Unlike for OLS, setting it to zero has no
+closed-form solution.
+
+\subsubsection{Categorical cross entropy}
+
+\subsubsection{Penalties}
+Any of the costs above can be extended with an $\ell_2$ or $\ell_1$ penalty on the weight
+matrices $\bm{W}^l$ of the network,
 \begin{equation}\label{eq:penalties}
     C_{\ell_2} = C + \lambda\sum_{l}\lVert \bm{W}^l\rVert_2^2, \qquad
     C_{\ell_1} = C + \lambda\sum_{l}\lVert \bm{W}^l\rVert_1,
@@ -42,10 +80,6 @@ and $\lambda\operatorname{sign}(\bm{W}^l)$ to the gradient, respectively. As for
 $\ell_1$ penalty is not differentiable at zero, and we use $\operatorname{sign}(0) = 0$,
 the minimal-norm subgradient. For the linear model, these are the Ridge and Lasso costs of
 \cref{subsec:linear-regression}.
-
-\subsubsection{Binary cross entropy}
-
-\subsubsection{Categorical cross entropy}
 
 \subsection{Gradient-based optimization}\label{subsec:optimization}
 
@@ -389,5 +423,27 @@ with $\bar{y}$ the mean of $\bm{y}$. An unbiased model with no variance reaches
 $\mathrm{MSE} = \sigma^2$ in expectation; $R^2$ compares against predicting
 $\bar{y}$ and is negative for a model that does worse than that constant~\cite{hjorth-jensen_2026}.
 
-% Classification: accuracy, precision, recall, F1 (macro-averaged) and the
-% confusion matrix.
+For classification, the predicted class $\tilde{y}_i = \arg\max_k p_{ik}$ is the class with the
+highest predicted probability, and the simplest measure is the accuracy,
+\begin{equation}\label{eq:accuracy}
+    \text{Accuracy} = \frac{1}{n}\sum_{i=0}^{n-1} I(\tilde{y}_i = y_i),
+\end{equation}
+where the indicator function $I$ is 1 if the prediction is correct and 0
+otherwise~\cite{hjorth-jensen_2026}. A single number hides which classes are confused with
+which, so we also compute the confusion matrix $\bm{N}$, where $N_{jk}$ counts the samples of
+true class $j$ predicted as class $k$. Correct predictions lie on the diagonal, and the
+accuracy is $\operatorname{tr}(\bm{N})/n$. From $\bm{N}$, the precision and recall of class $k$ are
+\begin{equation}\label{eq:precision-recall}
+    \text{Precision}_k = \frac{N_{kk}}{\sum_j N_{jk}}, \qquad
+    \text{Recall}_k = \frac{N_{kk}}{\sum_j N_{kj}},
+\end{equation}
+the fraction of predictions of class $k$ that are correct, and the fraction of samples of
+class $k$ that are found. Normalizing each row of $\bm{N}$ by its sum therefore puts the recall
+on the diagonal. The $F_1$ score of class $k$ is the harmonic mean of the two,
+\begin{equation}\label{eq:f1}
+    F_{1,k} = 2\,\frac{\text{Precision}_k \cdot \text{Recall}_k}
+    {\text{Precision}_k + \text{Recall}_k},
+\end{equation}
+which is high only if both are. We summarize the per-class scores by their unweighted mean,
+the macro average, which weights every class equally regardless of its
+size~\cite{hjorth-jensen_2026}.
