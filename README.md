@@ -1,58 +1,76 @@
-# FYS-STK4155-P0
+# FYS-STK4155 -- Project 2
 
-> Template repository for academic ML projects (FYS-STK4155 and similar).
-> Replace this description with the project's own.
+Feed-forward neural networks written from scratch in NumPy, used for regression of the
+Runge function and classification of the MNIST handwritten digits, and compared with
+linear regression (OLS, Ridge, Lasso) and logistic regression. Coursework for
+FYS-STK4155 at the University of Oslo (UiO).
+
+The report is [`docs/main.pdf`](docs/main.pdf). The data generation, linear models and
+optimizers are reused from
+[FYS-STK4155-P1](https://github.com/SigurdRiseth/FYS-STK4155-P1), installed as a
+dependency.
+
+**Author:** Sigurd Riseth
 
 ## Project structure
 
+The project text asks for the code in a folder named `Code`; here it lives in `src/` (the
+Python package) and `notebooks/` (the notebooks that reproduce the results).
+
 ```
 .
-├── src/fys_stk4155_p0/   # importable package — all reusable logic lives here
-├── tests/                # pytest test suite, mirrors src/ structure
-├── scripts/              # thin runnable entry points (data download, experiments)
-├── notebooks/            # exploratory Jupyter notebooks (outputs stripped on commit)
-├── data/                 # raw/processed data — gitignored, see data/README.md
-├── docs/                 # report, write-up, figures
-└── .github/workflows/    # CI: pre-commit hooks + tests on every push/PR
+├── src/fys_stk4155_p2/
+│   ├── nn/               # layers, activations, losses (with penalties) and the FFNN
+│   ├── models/           # logistic regression, built on the FFNN
+│   └── metrics.py        # accuracy, confusion matrix, precision, recall, F1
+├── tests/                # pytest suite, incl. backpropagation checked against jax.grad
+├── notebooks/            # regression.ipynb and classification.ipynb produce all results
+├── data/                 # cached search results (gitignored)
+├── docs/                 # IEEE-format LaTeX report and figures
+└── .github/workflows/    # CI: pre-commit hooks and tests on every push and PR
 ```
 
 ## Setup
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 (pinned in
-`.python-version`).
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.12 (pinned in `.python-version`).
 
 ```bash
-uv sync                  # installs dependencies + dev tools into .venv
-uv run pre-commit install  # enable git hooks (lint, format, nbstripout, mypy, gitleaks)
+uv sync                    # install dependencies and dev tools into .venv
+uv run pre-commit install  # git hooks: ruff, mypy, nbstripout, gitleaks
 ```
+
+## Reproducing the results
+
+Every figure and table in the report is produced by the two notebooks in `notebooks/`:
+
+| Notebook | Project parts | Content |
+|---|---|---|
+| `regression.ipynb` | b)–d) | Runge function: optimizers, activations, depth and width, $\ell_1$/$\ell_2$ penalties, comparison with OLS, Ridge and Lasso |
+| `classification.ipynb` | e) | MNIST: logistic regression baseline, architecture and penalty search, comparison with Scikit-Learn, test-set evaluation |
+
+```bash
+make notebooks   # run both notebooks, writing the figures to docs/figures/
+make report      # -> docs/main.pdf
+```
+
+The figures are written to `docs/figures/`. The hyperparameter searches are slow, so
+their results are cached in `data/`, keyed by the search settings; changing a grid reruns
+the search. MNIST is downloaded through Keras on the first run. All randomness is seeded.
 
 ## Development
 
 | Task | Command |
 |---|---|
-| Run tests (with coverage) | `make test` / `uv run pytest` |
-| Lint | `make lint` / `uv run ruff check .` |
-| Format | `make format` / `uv run ruff format .` |
-| Type check | `make typecheck` / `uv run mypy` |
+| Tests (with coverage) | `make test` |
+| Lint / format | `make lint` / `make format` |
+| Type check | `make typecheck` |
 | Everything | `make check` |
-| Run all pre-commit hooks manually | `uv run pre-commit run --all-files` |
 
-CI (`.github/workflows/ci.yml`) runs `uv sync --locked` (fails if `uv.lock`
-is out of sync with `pyproject.toml`), all pre-commit hooks, and the test
-suite on every push and pull request.
+## Use of LLMs
 
-## Reproducibility
-
-- Dependencies are pinned via `uv.lock`; always use `uv run`/`uv sync`
-  rather than an ad hoc environment.
-- Set and log random seeds explicitly wherever randomness is involved
-  (train/test splits, weight init, bootstrapping) — don't rely on global
-  state.
-- Notebooks are for exploration only; code meant to produce a reported
-  result belongs in `src/` (tested) and is invoked from a script, so the
-  result can be regenerated deterministically from a single command.
-- Raw data is never committed — `data/README.md` documents how to (re)obtain
-  it.
+The use of LLM tools is declared in the report's appendix
+(`docs/sections/appendices/0a-ai-usage.tex`) and marked in the notebooks with
+"LLM note" cells, following the course guidelines.
 
 ## License
 

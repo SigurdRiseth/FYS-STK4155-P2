@@ -1,0 +1,99 @@
+\subsection{Use of AI/LLM tools}
+\label{app:ai-tools}
+
+Large language models were used throughout this project, following the course
+guidelines\footnote{\url{https://github.com/EducationalMaterialUiO/MachineLearningUiO/blob/main/LLM_Usage_Declaration_Guidelines.md}},
+which also define the contribution levels below. All code was tested, all
+derivations were checked, and every claim in the report was read, understood
+and verified by the author.
+
+\subsubsection{Tools used}
+\begin{itemize}
+    \item Claude Code (Claude Opus 5.5, accessed via the command-line interface,
+    November 2026)
+    \item ChatGPT (various models, accessed via the web, November 2026)
+\end{itemize}
+
+Claude Code was used as a coding assistant with access to the repository: to build the
+classification experiments and the logistic regression model, turn the author's activation
+and loss functions into classes, extend the training loop, write most of the tests, and fix
+linting and type errors. It was also used to review and restructure the report, and to give feedback on
+drafted sections. ChatGPT was sometimes used to ask for feedback on sections of the
+report and to discuss results.
+
+\subsubsection{Text writing and editing}
+\Cref{tab:llm-writing-contribution} gives the contribution level for each part
+of the report.
+
+\begin{table}[htbp]
+    \centering
+    \caption{LLM contribution to text writing and editing (levels 0--3).}
+    \label{tab:llm-writing-contribution}
+    {\footnotesize
+    \begin{tabularx}{\columnwidth}{@{}lcX@{}}
+        \toprule
+        \textbf{Section} & \textbf{Level} & \textbf{Notes} \\
+        \midrule
+        % Levels above 1 are not allowed by the course
+        Abstract & 1 & Language editing \\
+        Introduction & 1 & LLM suggested how to make the opening specific to this project and
+        to shorten the outline; the text was rewritten by the author \\
+        Methods & 1--2 & LLM suggested the section order and pointed out errors in the
+        backpropagation equations \\
+        Implementation & 1--2 & An early example was produced with an LLM and rewritten by the
+        author; LLM feedback on length \\
+        Results and discussion & 1--3 & LLM suggested moving the MNIST description to
+        \cref{sec:implementation} and gave feedback on the presentation. In the final revision, an LLM drafted the short
+        paragraph and caption for \cref{fig:learning-rates} and the sentence on the depth of the
+        classification grid \\
+        Conclusion & 1 & Language editing \\
+        Appendices & 1 & Language editing \\
+        \bottomrule
+    \end{tabularx}}
+\end{table}
+
+\subsubsection{Code generation and assistance}
+\Cref{tab:code-generation} gives the level for each source file (levels 0--4).
+Functions with level 2 or above carry an \texttt{LLM-assisted} tag in their
+docstring.
+
+\begin{table*}[htbp]
+    \centering
+    \caption{LLM contribution to each code file and notebook (levels 0--4). Source files are
+    given relative to \texttt{src/fys\_stk4155\_p2/}.}
+    \label{tab:code-generation}
+    {\footnotesize
+    \begin{tabularx}{\textwidth}{@{}l c X@{}}
+        \toprule
+        \textbf{File} & \textbf{Level} & \textbf{Description} \\
+        \midrule
+        \texttt{notebooks/regression.ipynb} & 3 & Refactoring code and markdown cells for readability
+        and write the code for producing \cref{fig:model-comparison}. Parallelize the CV search for
+        optimal hyperparameters. \\
+        \texttt{notebooks/classification.ipynb} & 4 & Wrote most of the notebook: the logistic regression
+        baseline, the hyperparameter searches with cached results, the comparison of learning
+        rate schedules, the figures, and the comparison with Scikit-Learn; moved the confusion
+        matrices to the test set. Grids and experiment design chosen by the author. \\
+        \texttt{nn/activations.py} & 3 & Functions written independently, Claude made them into classes. \\
+        \texttt{nn/layers.py} & 0 & Written independently. \\
+        \texttt{nn/losses.py} & 3 & Functions written independently, Claude made them into classes. \\
+        \texttt{nn/network.py} & 2 & Completed the author's draft of learning rate schedules
+        and early stopping in \texttt{FFNN.fit}. \\
+        \texttt{models/logistic.py} & 4 & Completely written by Claude from authors prompt. \\
+        \texttt{metrics.py} & 0 & Written independently, largely imported from Project~1. \\
+        \texttt{utils/logger.py} & 0 & Written independently. \\
+        \texttt{tests/test\_network.py} & 4 & Wrote the test comparing backpropagation with
+        \texttt{jax.grad}. \\
+        \texttt{tests/test\_logistic.py} & 4 & Wrote most of the tests, and fixed two type
+        errors flagged by mypy. \\
+        \texttt{tests/test\_metrics.py} & 4 & Wrote most of the tests. \\
+        \texttt{tests/test\_main.py} & 4 & Wrote the test. \\
+        \bottomrule
+    \end{tabularx}}
+\end{table*}
+
+\subsubsection{Declared and undeclared use}
+The test comparing backpropagation with \texttt{jax.grad} was written by Claude Code, so it
+is declared in \cref{tab:code-generation} and tagged in its docstring. Asking ChatGPT to
+explain a concept or discuss a result, and then writing about it in our own words, would not
+need to be declared.

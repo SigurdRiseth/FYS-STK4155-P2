@@ -1,0 +1,361 @@
+\section{Results and Discussion}
+\label{sec:results-discussion}
+
+We first compare the networks with the linear models on Runge's function, and then with
+logistic regression on MNIST. The section ends with a critical evaluation of the methods.
+
+\subsection{Regression}
+
+The test set has only 20 samples, and the noise variance $\sigma^2 = 0.01$ sets a floor for
+the test MSE that every good model reaches. Differences in test MSE between good models are
+therefore mostly noise, so we compare them by their MSE against the true function $f$ on a
+dense grid, which is free of noise.
+
+\subsubsection{Sigmoid networks and optimizers}
+
+\Cref{fig:model-comparison} shows the main result of this part. OLS with the polynomial
+degree selected in Project~1 oscillates near the ends of the interval, while both networks
+follow Runge's function smoothly, using only the raw $x$ as input.
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/model_comparison.pdf}
+     \caption{OLS and two sigmoid networks fitted to 80 noisy samples of Runge's function.
+          OLS oscillates near the ends of the interval, while the networks follow the
+          function smoothly.}
+     \label{fig:model-comparison}
+\end{figure}
+
+OLS has the lowest training MSE, but the networks approximate $f$ about an order
+of magnitude better, as shown in \cref{tab:regression}. The polynomial spends its
+flexibility on fitting the noise near the edges, where the data constrain it least.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Performance of OLS and the two sigmoid networks. The networks have a higher
+          training MSE, but are far closer to the true function. The $1 \times 50$ network
+          is trained with Adam ($\gamma = 10^{-1}$, 100 epochs) and the $2 \times 100$ network
+          with RMSprop ($\gamma = 10^{-4}$, $10^4$ epochs), both with a batch size of 32.}
+    \label{tab:regression}
+    {\footnotesize\setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        Model & Train MSE & Test MSE & MSE vs $f$ \\
+        \midrule
+        OLS ($p=12$) & $0.0081$ & $0.0086$ & $0.0125$ \\
+        FFNN ($1 \times 50$) & $0.0097$ & $0.0092$ & $0.0020$ \\
+        FFNN ($2 \times 100$) & $0.0089$ & $0.0085$ & $0.0012$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+\Cref{fig:learning-rates} shows how the optimizer and the learning rate decide whether the
+networks train at all. Plain gradient descent rarely leaves the mean prediction, while RMSprop
+and Adam reach the noise floor over a wide range of learning rates. Mini-batches make every
+optimizer more robust, most clearly at large learning rates.
+
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=0.8\textwidth]{figures/regression/learning_rates.pdf}
+     \caption{Plain gradient descent rarely leaves the mean prediction, while the adaptive
+          methods work over a wide range of learning rates. Cross-validated MSE of the two
+          sigmoid networks for each optimizer, with full-batch (GD) and mini-batch (SGD)
+          updates, at the best number of epochs and batch size. An MSE near $0.10$ is the
+          mean prediction.}
+     \label{fig:learning-rates}
+\end{figure*}
+
+Training a sigmoid network often starts with a plateau, where the network predicts the mean of
+the data and the gradient towards curved features is small~\cite{saxe_2014} (\cref{fig:training-history}).
+\Cref{fig:optimizer-curves} shows that the optimizer decides how long this lasts: RMSprop and
+Adam leave the plateau far sooner than plain SGD at the same learning rate. A larger learning
+rate also leaves it sooner, but makes the cost noisy near the minimum, which motivates the
+decaying learning rate we use for classification.
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/optimizer_curves.pdf}
+     \caption{Training MSE per epoch of the $1 \times 50$ sigmoid network, trained with plain
+     SGD, RMSprop and Adam at batch size 16 for four learning rates. The adaptive methods
+     leave the initial plateau far sooner, and larger learning rates are faster but noisier.}
+     \label{fig:optimizer-curves}
+\end{figure}
+
+\subsubsection{Activation functions, depth and width}
+
+\Cref{fig:activation-architectures} shows that small networks are best for all three
+activations, and that the error grows with depth, faster for the ReLU family than for the
+sigmoid. A smooth function of one variable needs little capacity, and the extra parameters of
+a large network are spent on the noise.
+
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/activation_architectures.pdf}
+     \caption{Cross-validated MSE for each activation and architecture, at the best learning
+          rate $\gamma \in \{10^{-2}, 10^{-3}, 10^{-4}\}$, with Adam, 5000 epochs and a batch
+          size of 32. Lighter is better. Shallow networks are best, and depth hurts the ReLU
+          family most.}
+     \label{fig:activation-architectures}
+\end{figure*}
+
+The best network of each activation reaches about the same test MSE
+(\cref{tab:activation-comparison}), well within the noise of the small test set. Only the
+MSE against $f$ separates them, in favor of the sigmoid. The ReLU networks are piecewise
+linear and approximate the peak with a few straight segments, while the sigmoid gives a smooth
+curve that suits Runge's function better (\cref{fig:activation-comparison}).
+
+\begin{table}[htbp]
+    \centering
+    \caption{Performance of the network with the lowest cross-validated MSE for each
+          activation. Only the MSE against $f$ separates them.}
+    \label{tab:activation-comparison}
+    {\footnotesize\setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        Activation & Train MSE & Test MSE & MSE vs $f$ \\
+        \midrule
+        Sigmoid ($1 \times 80$) & $0.0091$ & $0.0076$ & $0.0015$ \\
+        ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.0022$ \\
+        Leaky ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.0021$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+The learning curves in \cref{fig:activation-curves} confirm that the large networks overfit:
+their training MSE falls below the noise floor, while their validation MSE stays well above
+it. The smallest networks show a much smaller gap.
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/activation_curves.pdf}
+     \caption{Training (dashed) and validation (solid) MSE per epoch for the smallest
+          ($1 \times 10$) and largest ($8 \times 160$) network of each activation, validated
+          on one fifth of the training data. The large networks fit the noise, with a
+          training MSE below $\sigma^2$ and a validation MSE well above it.}
+     \label{fig:activation-curves}
+\end{figure}
+
+\subsubsection{Regularization}
+
+To counter this overfitting, we add the $\ell_1$ and $\ell_2$ penalties to the networks with
+four and eight hidden layers of 40 and 80 nodes. \Cref{fig:regularization-lambda} shows the
+result, and \cref{fig:regularization-heatmaps} shows the full search over $\lambda$ and $\gamma$.
+
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=0.8\textwidth]{figures/regression/regularization_lambda.pdf}
+     \caption{Training (dashed) and cross-validated (solid) MSE as functions of the penalty
+          $\lambda$, at the best learning rate, with $\lambda = 0$ drawn one decade below the
+          smallest $\lambda$. For the ReLU family, both penalties give a clear minimum at
+          $\lambda = 10^{-3}$, while every sigmoid network collapses to the mean prediction
+          already at small $\lambda$.}
+     \label{fig:regularization-lambda}
+\end{figure*}
+
+For the ReLU family, both penalties give the U-shaped curve of the bias--variance trade-off.
+Without a penalty, the networks fit the noise. A moderate penalty raises the training MSE
+towards $\sigma^2$ and lowers the validation MSE, while a large one shrinks the weights until
+the network predicts the mean. The penalty helps most for the networks that overfit most, and
+brings them to the level of the best small networks without a penalty, so for the ReLU family,
+a penalty can replace a careful choice of architecture. The two norms perform almost
+identically, and since we use a subgradient with a finite step, $\ell_1$ does not give the
+exactly sparse weights of Lasso either.
+
+The sigmoid networks gain nothing from a penalty: their best configuration has $\lambda = 0$,
+and even small penalties make them predict the mean. A possible explanation is how the
+weights scale. A ReLU network can shrink the weights of one layer and grow those of another
+without changing its output, and
+can therefore reduce the penalty while keeping its function. A sigmoid network cannot, since
+small weights put every node in the nearly linear region around $z = 0$, where the network
+loses the curvature it needs for the peak. The sigmoid networks also overfit less to begin
+with, so they have less to gain.
+
+Finally, the best regularized networks approximate $f$ about five times better than the Ridge
+and Lasso models (\cref{tab:regularization-comparison}).
+Ridge still oscillates near $x = 1$, while Lasso underfits the peak
+(\cref{fig:regularization-comparison}). The Lasso
+model is weaker than it could be, since our Lasso solver did not converge for high degrees.
+
+\begin{table}[htbp]
+    \centering
+    \caption{The best regularized networks and the Ridge and Lasso models of Project~1. The
+          networks are about five times closer to the true function.}
+    \label{tab:regularization-comparison}
+    {\footnotesize\setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        Model & Train MSE & Test MSE & MSE vs $f$ \\
+        \midrule
+        Ridge ($p = 11$, $\lambda = 10^{-6}$) & $0.0084$ & $0.0100$ & $0.0097$ \\
+        ReLU ($4 \times 40$), $\ell_2$, $\lambda = 10^{-3}$ & $0.0083$ & $0.0076$ & $0.0016$ \\
+        Lasso ($p = 6$, $\lambda = 10^{-2.5}$) & $0.0202$ & $0.0187$ & $0.0101$ \\
+        ReLU ($4 \times 80$), $\ell_1$, $\lambda = 10^{-3}$ & $0.0086$ & $0.0085$ & $0.0022$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+\subsection{Image classification}
+
+\subsubsection{Logistic regression}
+
+Logistic regression is the network with no hidden layers, so each class score is a weighted
+sum of the raw pixels. It reaches a test accuracy of about 93\%
+(\cref{tab:classification-accuracy}), far above the 11\% of always guessing the most common
+digit.
+
+The errors are not spread evenly. Digits with a distinctive shape, such as 0 and 1, are
+almost always recognized, while digits that share strokes, such as 3, 5 and 8, are often
+confused (\cref{fig:logreg-matrix}). The weights explain why: each digit has a single
+template tied to fixed pixel positions (\cref{fig:logreg-weights}), so a digit that is
+shifted, slanted or written in an unusual style matches the wrong template. Handling this
+variation requires features that are learned from the data, which is what we expect the
+hidden layers to provide.
+
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/classification/logreg_weights.pdf}
+     \caption{Weights of logistic regression for each digit, reshaped to $28 \times 28$.
+     Red pixels increase the score of the digit and blue pixels decrease it. Each digit is
+     recognized by a single, blurred template at a fixed position.}
+     \label{fig:logreg-weights}
+\end{figure*}
+
+\subsubsection{Neural networks}
+
+\Cref{tab:classification-hyperparameter-search} summarizes the search and the selected
+network. \Cref{fig:hyperparameter-search} shows that width matters more than depth: for all
+activations, going from 20 to 80 nodes per layer helps, while more than four hidden layers
+gives nothing for the ReLU family. The sigmoid networks behave differently. They need more
+epochs, prefer large learning rates, and fail when the network is deep, which is consistent
+with the vanishing gradients discussed in \cref{subsec:neural-networks}. The ReLU family
+trains well over a wide range of learning rates, but fails at $\gamma = 10^{-1}$.
+The best network is both the widest and the shallowest in the grid, so a wider or shallower
+network might have done even better.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Search space and selected configuration of the classification network, chosen
+    by the validation accuracy.}
+    \label{tab:classification-hyperparameter-search}
+    \footnotesize
+    \setlength{\tabcolsep}{5pt}
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        Hyperparameter & Search space & Selected \\
+        \midrule
+        Activation function & Sigmoid, ReLU, Leaky ReLU & ReLU \\
+        Hidden layers & $\{4, 8, 12\}$ & $4$ \\
+        Nodes per layer & $\{20, 40, 80\}$ & $80$ \\
+        Learning rate $\gamma$ & $\{10^{-5}, \dots, 10^{-1}\}$ & $10^{-2}$ \\
+        $\ell_2$ penalty $\lambda$ & $\{0, 10^{-4}, \dots, 10^{-1}\}$ & $10^{-4}$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=0.8\textwidth]{figures/classification/ffnn_architectures.pdf}
+     \caption{Validation accuracy of each architecture without a penalty, at its best
+     learning rate (shown in each cell). Wider networks are better for all activations,
+     while depth beyond four layers does not help the ReLU family and harms the sigmoid.}
+     \label{fig:hyperparameter-search}
+\end{figure*}
+
+For the selected architecture, a small penalty gives a slight improvement, while
+$\lambda > 10^{-2}$ clearly hurts (\cref{fig:ffnn-regularization}). With
+$50\,000$ training images and early stopping, the network does not overfit much, so there is
+little for the penalty to correct. Large penalties combined with large learning rates make
+training fail, and the network falls back to predicting a single digit.
+
+\Cref{fig:ffnn-learning-curve} shows what the learning rate schedule and early stopping
+add. With a constant learning rate, the validation cost stops improving early and becomes
+noisy, while the decaying learning rate keeps lowering it and gives a clearly better network.
+Early stopping ends training at about half the maximum number of epochs, with almost the same
+accuracy as training for all of them.
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/classification/ffnn_learning_curve.pdf}
+     \caption{Training (dashed) and validation (solid) cost per epoch of the selected network,
+     trained for all 50 epochs with a constant and an exponentially decaying learning rate.
+     The decay gives a lower validation cost, and early stopping (dotted) ends training
+     where the gains have become small.}
+     \label{fig:ffnn-learning-curve}
+\end{figure}
+
+\subsubsection{Comparison on the test set}
+
+On the test set, the network reduces the error rate of logistic regression by a factor of
+three (\cref{tab:classification-accuracy}). The improvement is largest for the digits
+that logistic regression confused most, such as 3, 5 and 8 (\cref{fig:ffnn-matrix}). The accuracy and the
+macro-averaged $F_1$ score are almost equal for all models, since MNIST is close to balanced.
+
+Our implementations agree well with Scikit-Learn. Our logistic regression is slightly better,
+and our network is about 1.5 percentage points better than \texttt{MLPClassifier} with the same
+architecture, which has neither our learning rate schedule nor early stopping. This gap is
+similar to the one between the constant and decaying learning rate in
+\cref{fig:ffnn-learning-curve}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Test accuracy and macro-averaged $F_1$ score of the selected models.}
+    \label{tab:classification-accuracy}
+    {\footnotesize\setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}lcc@{}}
+        \toprule
+        Model & Accuracy & Macro $F_1$ \\
+        \midrule
+        Majority class & $0.114$ & $0.020$ \\
+        Logistic regression & $0.926$ & $0.925$ \\
+        Logistic regression (Scikit-Learn) & $0.922$ & $0.921$ \\
+        FFNN & $0.977$ & $0.977$ \\
+        FFNN (Scikit-Learn) & $0.962$ & $0.961$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/classification/ffnn_confusion_matrix.pdf}
+     \caption{Confusion matrix of the selected network on the test set, normalized by
+     row (\%). Compared with logistic regression (\cref{fig:logreg-matrix}), the recall is
+     high for every digit.}
+     \label{fig:ffnn-matrix}
+\end{figure}
+
+\subsection{Critical evaluation}\label{subsec:critical-evaluation}
+
+For both tasks, the neural networks gave the best models, but at a much higher cost. Linear
+and logistic regression have few hyperparameters, train quickly and have interpretable
+weights; OLS and Ridge even have closed-form solutions, and the cost of logistic regression is
+convex. A network has a non-convex cost, needs a search over the architecture, the activation,
+the optimizer, the learning rate and the penalty, and each configuration must be trained for
+many epochs. The networks were also more fragile: too large a learning rate or too deep a
+sigmoid network made training fail, which never happened for the linear models.
+
+For regression, a small sigmoid network approximated Runge's function best. Its advantage
+over OLS and Ridge comes from the polynomial features, which oscillate near the ends of the
+interval, rather than from linear regression itself; a better choice of basis would likely
+narrow the gap. If cost or interpretability matters, Ridge is a reasonable choice,
+but for the best fit of a function with a sharp feature, the network is better.
+
+For classification, the network made about a third as many errors as logistic regression.
+Here the features are hard to design by hand, and learning them is what makes the
+difference. Logistic regression remains a strong and cheap baseline, and its weights show
+directly what the model has learned.
+
+Across both tasks, Adam and RMSprop were more robust than plain gradient descent, and ReLU
+networks trained more reliably than sigmoid networks when the network was deep. A penalty
+only helped where the networks overfit, which was the case for the large networks on the 80
+regression samples, but hardly on the 50\,000 MNIST images. A decaying learning rate and early
+stopping improved the classification network at no extra cost.
+
+Our study also has limitations. Every configuration was trained from one set of initial
+weights and evaluated on one split, so small differences between configurations are not
+significant. The regression test set has only 20 samples, and the grids are coarse. The best
+classification network lies at the edge of the search grid, which starts at four hidden
+layers, so we cannot say whether one or two hidden layers would have done as well. The learning rate schedule was only
+used for classification. The answer to the question in \cref{sec:introduction} is therefore
+qualitative: the flexibility of a network is worth its cost when good features are hard to
+choose by hand, as for images, and least worth it when a simple model with suitable features
+is available.

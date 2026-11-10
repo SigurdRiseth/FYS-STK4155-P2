@@ -1,25 +1,29 @@
 [project]
-name = "fys-stk4155-p0"
+name = "fys-stk4155-p2"
 version = "0.1.0"
-description = "Add your description here"
+description = "Solution of FYS-STK4155 Project 2, concerning classification and regression using feed-forward neural networks."
 readme = "README.md"
 license = "GPL-3.0-or-later"
 authors = [
-    { name = "Sigurd Riseth", email = "sigurd.riseth@gmail.com" }
+    { name = "Sigurd Riseth" }
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "fys-stk4155-p1",
+    "jax>=0.11.2",
     "matplotlib>=3.11.1",
     "numpy>=2.5.2",
     "pandas>=3.0.5",
+    "scienceplots>=2.2.2",
     "scikit-learn>=1.9.0",
+    "tensorflow>=2.21.0",
 ]
 
 [project.scripts]
-fys-stk4155-p0 = "fys_stk4155_p0:main"
+fys-stk4155-p2 = "fys_stk4155_p2:main"
 
 [build-system]
-requires = ["uv_build>=0.12.5,<0.13.0"]
+requires = ["uv_build>=0.13.6,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
@@ -60,8 +64,11 @@ warn_unused_ignores = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=fys_stk4155_p0 --cov-report=term-missing"
+addopts = "--cov=fys_stk4155_p2 --cov-report=term-missing"
 
 [tool.coverage.run]
 source = ["src"]
 branch = true
+
+[tool.uv.sources]
+fys-stk4155-p1 = { git = "https://github.com/SigurdRiseth/FYS-STK4155-P1", tag = "v0.1.0" }

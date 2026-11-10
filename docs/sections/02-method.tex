@@ -1,0 +1,505 @@
+\section{Method}
+\label{sec:method}
+
+% Theory, methods, algorithms. Assume the reader has familiarity with basic
+% linear algebra and statistics. Break into \subsection{}s as the content
+% develops, e.g. one per model/algorithm.
+
+This section presents the cost functions and the gradient-based methods used to
+minimize them, then the models, linear regression, logistic regression, and neural
+networks, and finally the evaluation methods used. We assume the reader has
+familiarity with basic linear algebra and statistics.
+
+\subsection{Cost functions and their gradients}\label{subsec:cost-functions}
+% Part a): set up each cost with and without the $\ell_1$ and $\ell_2$ penalties, its gradient,
+% and explain the terms.
+
+\subsubsection{Mean squared error}
+For regression, we measure the fit of the predictions $\tilde{y}_i$ to the targets
+$y_i$ by the mean squared error,
+\begin{equation}\label{eq:mse-cost}
+    C_\text{MSE} = \frac{1}{n}\sum_{i=0}^{n-1}\left(y_i - \tilde{y}_i\right)^2,
+\end{equation}
+the same quantity that OLS minimizes. Squaring the
+residuals penalizes large errors heavily, and up to constants the MSE is the negative
+log-likelihood of Gaussian noise as in \cref{eq:data-generating-process}~\cite{goodfellow_2016}.
+Its derivative with respect to a prediction is
+\begin{equation}\label{eq:mse-gradient}
+    \frac{\partial C_\text{MSE}}{\partial \tilde{y}_i} = \frac{2}{n}\left(\tilde{y}_i - y_i\right),
+\end{equation}
+which is all that backpropagation needs from the cost. For the linear model
+$\tilde{\bm{y}} = \bm{X}\bm{\theta}$, the chain rule recovers
+\begin{equation}\label{eq:ols-grad}
+    \nabla_{\bm{\theta}} C_\text{MSE} =
+    \frac{2}{n}\bm{X}^\top(\bm{X}\bm{\theta} - \bm{y}).
+\end{equation}
+
+\subsubsection{Binary cross entropy}
+
+For binary classification with labels $y_i \in \{0, 1\}$, we replace the Gaussian noise
+model of regression by a Bernoulli model. The model outputs a logit $z_i$, and the sigmoid
+maps it to the probability of the positive class, $p_i = \sigma(z_i) = P(y_i = 1 \mid
+\bm{x}_i)$, so that the negative class has probability $1 - p_i$. For independent samples,
+the likelihood of the data given the parameters $\bm{\theta}$ is
+\begin{equation}\label{eq:bernoulli-likelihood}
+    P(\mathcal{D} \mid \bm{\theta}) = \prod_{i=0}^{n-1} p_i^{y_i}(1 - p_i)^{1 - y_i},
+\end{equation}
+and minimizing its negative logarithm, averaged over the samples, gives the binary cross
+entropy (BCE)~\cite{goodfellow_2016,hjorth-jensen_2026},
+\begin{equation}\label{eq:bce-cost}
+    C_\text{BCE} = -\frac{1}{n}\sum_{i=0}^{n-1}
+    \left[y_i \log p_i + (1 - y_i)\log(1 - p_i)\right].
+\end{equation}
+A confident, correct prediction contributes almost nothing, while the cost grows without
+bound as the model becomes confidently wrong. Since $\sigma'(z) = \sigma(z)(1 - \sigma(z))$,
+the derivative with respect to a logit is
+\begin{equation}\label{eq:bce-gradient}
+    \frac{\partial C_\text{BCE}}{\partial z_i} = \frac{1}{n}\left(p_i - y_i\right).
+\end{equation}
+The derivative of the sigmoid has cancelled, so as for the MSE in \cref{eq:mse-gradient}
+the gradient is proportional to the residual, and it does not vanish when the sigmoid
+saturates. For logistic regression, $\bm{z} = \bm{X}\bm{\theta}$, and the chain rule gives
+\begin{equation}\label{eq:bce-grad-theta}
+    \nabla_{\bm{\theta}} C_\text{BCE} = \frac{1}{n}\bm{X}^\top(\bm{p} - \bm{y}),
+\end{equation}
+which has the form of \cref{eq:ols-grad} with the linear prediction $\bm{X}\bm{\theta}$
+replaced by the probabilities $\bm{p}$. Unlike for OLS, setting it to zero has no
+closed-form solution~\cite{hjorth-jensen_2026}.
+
+\subsubsection{Categorical cross entropy}
+
+For $K$ classes, the model outputs one logit $z_{ik}$ per class, and the softmax maps them
+to probabilities that are positive and sum to one,
+\begin{equation}\label{eq:softmax}
+    p_{ik} = \frac{e^{z_{ik}}}{\sum_{k'=0}^{K-1} e^{z_{ik'}}}.
+\end{equation}
+With the targets one-hot encoded, $y_{ik} = 1$ if sample $i$ belongs to class $k$ and $0$
+otherwise, the negative log-likelihood averaged over the samples is the categorical cross
+entropy (CCE),
+\begin{equation}\label{eq:cce-cost}
+    C_\text{CCE} = -\frac{1}{n}\sum_{i=0}^{n-1}\sum_{k=0}^{K-1} y_{ik}\log p_{ik},
+\end{equation}
+which reduces to \cref{eq:bce-cost} for $K = 2$~\cite{hjorth-jensen_2026}. Its derivative
+with respect to a logit has the same form as for the binary case,
+\begin{equation}\label{eq:cce-gradient}
+    \frac{\partial C_\text{CCE}}{\partial z_{ik}} = \frac{1}{n}\left(p_{ik} - y_{ik}\right),
+\end{equation}
+so multinomial logistic regression, with $\bm{Z} = \bm{X}\bm{\Theta}$, has the gradient
+$\frac{1}{n}\bm{X}^\top(\bm{P} - \bm{Y})$. Since the softmax is unchanged when the same
+constant is subtracted from all logits, we subtract the largest logit before
+exponentiating, so that no exponential overflows~\cite{hjorth-jensen_2026}.
+
+\subsubsection{Penalties}
+Any of the costs above can be extended with an $\ell_2$ or $\ell_1$ penalty on the weight
+matrices $\bm{W}^l$ of the network,
+\begin{equation}\label{eq:penalties}
+    C_{\ell_2} = C + \lambda\sum_{l}\lVert \bm{W}^l\rVert_2^2, \qquad
+    C_{\ell_1} = C + \lambda\sum_{l}\lVert \bm{W}^l\rVert_1,
+\end{equation}
+with the norms taken element-wise and $\lambda \geq 0$. The penalties add $2\lambda\bm{W}^l$
+and $\lambda\operatorname{sign}(\bm{W}^l)$ to the gradient, respectively. As for Lasso, the
+$\ell_1$ penalty is not differentiable at zero, and we use $\operatorname{sign}(0) = 0$,
+the minimal-norm subgradient. For the linear model, these are the Ridge and Lasso costs of
+\cref{subsec:linear-regression}.
+
+\subsection{Gradient-based optimization}\label{subsec:optimization}
+
+Apart from OLS and Ridge regression, none of the costs in this report have a
+closed-form minimizer, so we minimize them iteratively with gradient descent (GD).
+For a differentiable cost $C(\bm{\theta})$, GD iterates
+\begin{equation}\label{eq:gd-basic}
+    \bm{\theta}^{(k+1)} = \bm{\theta}^{(k)} - \gamma
+    \nabla_{\bm{\theta}} C\big(\bm{\theta}^{(k)}\big),
+\end{equation}
+with learning rate $\gamma > 0$, at the cost of one gradient evaluation per
+iteration~\cite{hjorth-jensen_2026}.
+
+\paragraph{Momentum}
+
+Momentum adds a fraction $\beta \in [0, 1)$ of the previous step to the current one,
+\begin{equation}\label{eq:gd-momentum}
+    \bm{v}^{(k)} = \beta\bm{v}^{(k-1)} + \gamma\nabla_{\bm{\theta}}
+    C\big(\bm{\theta}^{(k)}\big), \qquad
+    \bm{\theta}^{(k+1)} = \bm{\theta}^{(k)} - \bm{v}^{(k)},
+\end{equation}
+with $\bm{v}^{(0)} = \bm{0}$. Steps along directions where the gradient keeps its sign
+accumulate, while oscillations across a narrow valley partly cancel, which helps on
+ill-conditioned costs~\cite{goodfellow_2016,hjorth-jensen_2026}.
+
+\paragraph{Adaptive learning rates}
+
+Adaptive methods give each parameter its own effective learning rate. AdaGrad~\cite{duchi_2011}
+divides the step of each coordinate by the root of its accumulated squared gradients,
+so the effective step can only decrease. RMSprop replaces the sum by an exponentially
+decaying average,
+\begin{align}\label{eq:rmsprop-iterate}
+    \bm{v}^{(k)} &= \rho\bm{v}^{(k-1)} + (1-\rho)\,\bm{g}^{(k)}\odot\bm{g}^{(k)},\nonumber \\
+    \bm{\theta}^{(k+1)} &= \bm{\theta}^{(k)} - \frac{\gamma}{\sqrt{\bm{v}^{(k)}}
+    + \epsilon}\odot\bm{g}^{(k)},
+\end{align}
+so the step size can recover~\cite{goodfellow_2016}. Here $\bm{g}^{(k)}$ is the gradient,
+$\odot$ the Hadamard product, and the square root and division are element-wise.
+Adam~\cite{kingma_2017} combines a decaying average of the gradient, as in momentum,
+with the scaling of RMSprop, and corrects both averages for their initialization at zero:
+\begin{align}\label{eq:adam-iterate}
+    \bm{m}^{(k)} &= \beta_1\bm{m}^{(k-1)} + (1-\beta_1)\,\bm{g}^{(k)},\nonumber \\
+    \bm{v}^{(k)} &= \beta_2\bm{v}^{(k-1)} + (1-\beta_2)\,\bm{g}^{(k)}\odot\bm{g}^{(k)},\nonumber \\
+    \bm{\theta}^{(k+1)} &= \bm{\theta}^{(k)} - \gamma\,
+    \frac{\bm{m}^{(k)}/(1-\beta_1^{k})}{\sqrt{\bm{v}^{(k)}/(1-\beta_2^{k})}+\epsilon}.
+\end{align}
+We use $\rho = 0.9$ for RMSprop, $\beta_1 = 0.9$ and $\beta_2 = 0.999$ for Adam, and
+$\epsilon = 10^{-8}$. Since Adam divides by the running root-mean-square of the gradient,
+its steps do not shrink with the gradient near a minimum, and with a fixed $\gamma$ it keeps
+taking steps of order $\gamma$ there.
+
+\paragraph{Stochastic gradient descent}
+
+For a cost that is an average over the data, $C(\bm{\theta}) = \frac{1}{n}
+\sum_{i=0}^{n-1} c_i(\bm{\theta})$, stochastic gradient descent (SGD) replaces the full
+gradient by the average over a mini-batch $\mathcal{B}_k$ of $M$ points,
+\begin{equation}
+    \bm{g}^{(k)} = \frac{1}{M}\sum_{i\in\mathcal{B}_k}\nabla_{\bm{\theta}}
+    c_i\big(\bm{\theta}^{(k)}\big).
+\end{equation}
+This is an unbiased estimate of the full gradient~\cite{goodfellow_2016}. We
+shuffle the training set once per epoch and split it into $\lceil n_\text{tr}/M
+\rceil$ mini-batches, so one epoch costs the same number of floating-point
+operations as one full-batch step but makes $\lceil n_\text{tr}/M\rceil$
+updates. The gradient noise does not vanish at the minimum, so with a fixed
+learning rate the iterates fluctuate around it; a decaying learning rate,
+here $\gamma_t = \gamma_0/(1+ \delta t)$ or $\gamma_t = \gamma_0 e^{-\delta t}$
+with $t$ the number of updates, damps these fluctuations~\cite{hjorth-jensen_2026}.
+Any of the update rules above can be applied to $\bm{g}^{(k)}$.
+
+\subsection{Linear regression}\label{subsec:linear-regression}
+% - Model $\hat{\bm y} = X\bm\beta$, MSE loss, the OLS and Ridge closed forms.
+% - Write out the gradient explicitly: $\nabla_\beta C = \frac{2}{n}X^\top(X\bm\beta - \bm y) + 2\lambda\bm\beta$. This sets up everything later.
+
+Consider a dataset of $n$ samples $\mathcal{D}=\{ (y_i,x_i) \}^{n-1}_{i=0}$, and assume
+that the targets $y_i$ are generated by
+\begin{equation}\label{eq:data-generating-process}
+    \bm{y} = \bm{f} + \bm{\varepsilon}, \qquad
+    \bm{\varepsilon} \sim \mathcal{N}(\bm{0}, \sigma^2\bm{I}_n),
+\end{equation}
+where $\bm{f}$ collects the values of an unknown function $f$. A polynomial model of
+degree $p$ can then be written as the prediction $\bm{\tilde{y}}=\theta_0 + \bm{X\theta}$,
+with $\bm{X} \in \mathbb{R}^{n \times p}$ the design matrix containing the polynomials
+$\bm{x},\dots, \bm{x}^p$, and $\bm{\theta} \in \mathbb{R}^p$ the parameter vector, with
+$\theta_0$ the intercept. The goal of linear regression is to choose $\bm{\hat{\theta}}$
+so that the fitted model $g(\bm{X}; \bm{\hat{\theta}})=\theta_0 + \bm{X\hat{\theta}}$
+best approximates the unknown function $f$ on the data $\mathcal{D}$~\cite{hjorth-jensen_2026,mehta_2019}.
+
+One solution to this is to minimize the mean squared error (MSE), which yields the
+ordinary least squares (OLS) predictor,
+\begin{equation}\label{eq:ols-cost}
+    C_\text{OLS}(\bm{\theta}) = \frac{1}{n}\left\lVert \bm{y}
+    - \bm{X}\bm{\theta} \right\rVert_2^2 .
+\end{equation}
+This cost is convex, since its Hessian $\bm{H} = \frac{2}{n}\bm{X}^\top\bm{X}$ is positive
+semi-definite, so every stationary point is a global minimizer. Setting the gradient
+$\nabla_{\bm{\theta}} C_\text{OLS} = \frac{2}{n}\bm{X}^\top
+(\bm{X}\bm{\theta} - \bm{y})$ to zero gives the normal equations; if
+$\bm{X}$ has full column rank, the normal equations have the unique solution
+\begin{equation}\label{eq:ols-theta-hat}
+    \hat{\bm{\theta}}_\text{OLS} = (\bm{X}^\top \bm{X})^{-1} \bm{X}^\top \bm{y}.
+\end{equation}
+
+By adding the squared $\ell_2$-norm of the parameter vector as a penalty to the cost function,
+we obtain Ridge regression~\cite{hoerl_1970},
+\begin{equation}\label{eq:ridge-cost}
+    C_\text{Ridge}(\bm{\theta}) = \frac{1}{n}\left\lVert \bm{y}
+    - \bm{X}\bm{\theta} \right\rVert_2^2 + \lambda \lVert \bm{\theta} \rVert_2^2,
+    \qquad \lambda \geq 0.
+\end{equation}
+For $\lambda > 0$ the Hessian is positive definite, so the cost is strictly convex. This
+yields the minimizer
+\begin{equation}\label{eq:ridge-theta-hat}
+    \hat{\bm{\theta}}_{\text{Ridge}}(\lambda) = \left(\bm{X}^\top \bm{X}
+    + n\lambda \bm{I}\right)^{-1} \bm{X}^\top \bm{y}.
+\end{equation}
+
+Lasso~\cite{tibshirani_1996} instead applies an $\ell_1$ penalty,
+\begin{equation}\label{eq:lasso-cost}
+    C_\text{Lasso}(\bm{\theta}) = \frac{1}{n}\left\lVert \bm{y}
+    - \bm{X}\bm{\theta} \right\rVert_2^2
+    + \lambda \lVert \bm{\theta} \rVert_1 .
+\end{equation}
+The cost is convex but not differentiable where a coefficient is zero, and it
+has no closed-form minimizer~\cite{mehta_2019}, so it is minimized with the methods of
+\cref{subsec:optimization}. Lasso performs variable selection while Ridge only
+shrinks~\cite{hjorth-jensen_2026}.
+
+\subsection{Logistic regression}\label{subsec:logistic-regression}
+
+% - Motivation: the targets are classes, so you want probabilities. Apply the sigmoid to the linear predictor.
+% - Derive binary cross-entropy from maximum likelihood (Bernoulli). That justifies the loss instead of just stating it.
+% - Point out that there is no closed form, so you now need the gradient-descent machinery from 2.1.
+% - The key result: the gradient is $\nabla_\beta C = \frac{1}{n}X^\top(\hat{\bm y} - \bm y)$, the same form as for linear regression. Matching the sigmoid with BCE is what cancels the $\sigma'$ term. This makes a good bridge to the next section.
+% - Mention convexity, since it means there is one minimum (unlike neural networks).
+% - If you use MNIST, add a short paragraph on softmax and categorical cross-entropy as the multiclass generalization.
+
+Logistic regression is a natural choice as a baseline. It is a simple model in which
+everything can be computed, its cost function is convex, and it is exactly a neural
+network with no hidden layers~\cite{hjorth-jensen_2026}. Its cost is the binary or
+categorical cross entropy of \cref{subsec:cost-functions}.
+
+\subsection{Neural networks}\label{subsec:neural-networks}
+
+% - Start with your existing sentence: a single neuron is linear or logistic regression,
+% depending on $f$. The limitation is that the features $X$ are fixed.
+% A network instead learns the features passed to that final layer.
+
+Linear and logistic regression share a common limitation: both act on a fixed
+design matrix $\bm{X}$, so the model can only be as expressive as the features we
+choose to put into it. A feed-forward neural network removes this limitation by
+inserting one or more \emph{hidden layers} between the input and the output, each applying
+a linear map followed by a non-linear activation. The final layer is then nothing more
+than a linear or logistic regression, but it acts on features that are \emph{learned} from
+the data rather than given in advance~\cite{hjorth-jensen_2026}.
+% Since the parameters
+% of these hidden layers enter the cost function non-linearly, there is no closed-form
+% solution, and the network must be trained with gradient-based methods, computed by
+% backpropagation.
+
+\subsubsection{The artificial neuron}\label{subsubsec:artificial-neuron}
+
+An artificial neuron computes a linear predictor, as in logistic regression, followed
+by an activation function. We number layers as $l =0,1,\dots,L$, with $l=0$ the input and
+$l=L$ the output, and $n_l$ the number of nodes in layer $l$. For a single neuron $j$ in
+layer $l$, the activation is
+\begin{equation}\label{eq:single-activation}
+    z_j^l = \sum_{i=0}^{n_{l-1}-1} w_{ij}^l a_i^{l-1}+b_j^l,
+\end{equation}
+where $w_{ij}^l$ is the weight connecting node $i$ of layer $l-1$ to node $j$ of layer $l$,
+and $b_j^l$ is the bias of node $j$ in layer $l$. We can then obtain the output by applying
+the activation function~\cite{hjorth-jensen_2026},
+\begin{equation}\label{eq:single-activation-function}
+    a_j^l = f(z_j^l).
+\end{equation}
+This whole process is depicted in \cref{fig:single-artificial-neuron}, where the activation
+and output of a single neuron $j$ in layer $l$ is shown.
+
+\begin{figure}[htbp]
+    \centering
+    \includestandalone[width=0.8\linewidth]{figures/tikz/single-artificial-neuron}
+    \caption{The activation and output of a single neuron $j$ in layer $l$,
+    as shown in \cref{eq:single-activation,eq:single-activation-function}.}
+    \label{fig:single-artificial-neuron}
+\end{figure}
+
+\subsubsection{Forward pass}
+
+We can write the activation and output of all neurons in the layer $l$ in matrix-form,
+where \cref{eq:single-activation,eq:single-activation-function} become
+\begin{equation}\label{eq:matrix-form-activation}
+    \bm{z}^l = (\bm{W}^l)^\top \bm{a}^{l-1} + \bm{b}^l,
+    \qquad \bm{a}^l = \bm{f}(\bm{z}^l),
+\end{equation}
+with $\bm{f}$ applied element-wise. Evaluating \cref{eq:matrix-form-activation}
+sequentially for all $l$-values is the feed-forward pass and returns the network
+output $\bm{\tilde{y}}=\bm{a}^L$~\cite{hjorth-jensen_2026}.
+
+\begin{figure}[htbp]
+    \centering
+    \includestandalone[width=0.8\linewidth]{figures/tikz/dense-neural-network}
+    \caption{Illustration of a fully connected feed-forward neural network.
+    Adapted from \textcite{love_2024}.}
+    \label{fig:neural-network-tikz}
+\end{figure}
+
+We can further collect the weights and biases into a single parameter vector
+$\bm{\Theta}=\{\bm{W}^l, \bm{b}^l\}_{l=1}^L$, and write the optimization problem as
+\begin{equation}\label{eq:nn-optimization-problem}
+    \hat{\bm{\Theta}} = \arg \min_{\bm{\Theta}} C(\bm{\Theta}), \quad
+    C(\bm{\Theta}) = \frac{1}{n} \sum_{i=0}^{n-1} c_i(\bm{\Theta}),
+\end{equation}
+where $c_i$ is the cost of sample $i$ for one of the cost functions of
+\cref{subsec:cost-functions}, with a penalty from \cref{eq:penalties} added when the network
+is regularized~\cite{hjorth-jensen_2026}.
+This is a non-convex optimization problem, so there is no closed-form solution, and we must
+resort to the gradient-based methods reported in \cref{subsec:optimization} to find
+a local minimum.
+
+\subsubsection{Activation functions}
+
+% Introduce why it must be non-linear and why we care about the derivative
+% Element-wise (done for all $z$ in $\bm{z}$). Should we write z or \bm{z} below?
+
+% Activation functions. First explain why they must be nonlinear: stacked linear layers
+% collapse into one linear map. Then cover why the derivative matters, which leads into
+% backprop. Then sigmoid, ReLU and leaky ReLU, including vanishing gradients and
+% saturation as the argument for ReLU.
+
+The activation function must be non-linear and differentiable almost everywhere.
+If it were linear, the composition of multiple layers would collapse into a single
+affine transformation, and the network would be no more expressive than a single
+layer~\cite{hjorth-jensen_2026}.
+Our study will revolve around the following three activation functions:
+
+\paragraph{Sigmoid} The logistic or sigmoid function is given by
+\begin{equation*}
+    \sigma(z) = \frac{1}{1+e^{-z}}, \qquad \sigma'(z) = \sigma (z) (1 - \sigma (z)),
+\end{equation*}
+and was the standard choice for decades. Its main drawback is that it saturates for
+large $|z|$, which leads to vanishing gradients and slow training~\cite{hjorth-jensen_2026}.
+
+\paragraph{ReLU} The rectified linear unit (ReLU),
+\begin{equation*}
+    \mathrm{ReLU}(z) = \max (0, z),
+    \quad \mathrm{ReLU}'(z) =
+    \begin{cases}
+        1, & \text{if } z>0, \\
+        0, & \text{if } z\leq 0,
+    \end{cases}
+\end{equation*}
+is faster to compute, does not saturate for $z>0$, and is a sound default choice for hidden layers.
+Its main drawback is that it can lead to dead neurons, which never activate and thus never learn~\cite{hjorth-jensen_2026}.
+
+\paragraph{Leaky ReLU} The leaky ReLU repairs this issue by allowing a small gradient for negative values,
+so the gradient never completely vanishes. It is defined as
+\begin{equation*}
+    \text{Leaky ReLU}(z) =
+    \begin{cases}
+        z, & \text{if } z > 0, \\
+        \alpha z, & \text{if } z \leq 0,
+    \end{cases}
+    \quad \alpha \approx 0.01,
+\end{equation*}
+and its derivative is
+\begin{equation*}
+    \text{Leaky ReLU}'(z) =
+    \begin{cases}
+        1, & \text{if } z > 0, \\
+        \alpha, & \text{if } z \leq 0.
+    \end{cases}
+\end{equation*}
+
+\subsubsection{Backpropagation}
+
+We can compute the gradient of the cost function with respect to the parameters using
+the backpropagation algorithm~\cite{rumelhart_1986}. The key idea is to compute the
+error at the output layer and then propagate it backward through the network.
+
+Writing the cost as $C = \frac{1}{n}\sum_{i=0}^{n-1} c_i$, the error of sample $i$ at layer $l$ is
+$\bm{\delta}_i^l = \partial c_i / \partial \bm{z}_i^l$, which satisfies
+\begin{equation*}
+    \bm{\delta}_i^l = (\bm{W}^{l+1} \bm{\delta}_i^{l+1}) \odot \bm{f}'(\bm{z}_i^l),
+\end{equation*}
+where $\odot$ denotes the element-wise product. At the output, all three pairings of
+output layer and cost give
+$\bm{\delta}_i^L \propto \bm{a}_i^L - \bm{y}_i$, with a factor 2 for the MSE and 1 for the
+cross entropies~\cite{hjorth-jensen_2026}. The gradients are then averaged over the samples,
+\begin{equation*}
+    \frac{\partial C}{\partial \bm{W}^l} = \frac{1}{n}\sum_{i=0}^{n-1} \bm{a}_i^{l-1}
+    (\bm{\delta}_i^l)^\top,
+    \qquad
+    \frac{\partial C}{\partial \bm{b}^l} = \frac{1}{n}\sum_{i=0}^{n-1} \bm{\delta}_i^l,
+\end{equation*}
+where SGD takes the mean over a minibatch instead. Any penalty gradient (\cref{eq:penalties}) is
+added to $\partial C / \partial \bm{W}^l$, and the parameters are updated with the methods of
+\cref{subsec:optimization}.
+
+\subsubsection{Choice of output layer and loss function}\label{subsubsec:output-layer}
+% Identity with MSE gives regression while sigmoid or softmax with cross-entropy gives classification.
+% The two earlier models reappear as special cases of the output layer.
+% Mentioned what are "natural pairings" of output layer and loss function as mentioned before.
+
+For regression, an identity output allows unrestricted continuous predictions and is paired
+with the MSE. For binary classification, a sigmoid output gives a probability in $[0,1]$ and is
+paired with the binary cross-entropy, and for multiclass classification, the softmax gives a
+probability distribution over the classes and is paired with the categorical cross-entropy.
+These pairings follow from the assumed distribution of the target and the corresponding
+likelihood~\cite{hastie_2017,hjorth-jensen_2026}.
+
+\subsubsection{Weight initialization}
+%  Weight initialization, which is new since there was nothing to initialize with a closed form. This is where initializers.py fits in.
+
+Unlike the linear models, the network has no closed-form solution, and gradient
+descent must start from some initial weights. Setting all weights to zero would
+give every node in a layer the same output and the same gradient, so they would
+stay identical; the initialization must break this symmetry. Weights that are too
+large saturate the activations, while weights that are too small make the signal
+vanish~\cite{hjorth-jensen_2026}.
+\textcite{glorot_2010} argue that the variance of the activations should be kept
+from layer to layer in the forward pass, and the variance of the gradients in the
+backward pass. For a layer with $n_{l-1}$ inputs and $n_l$ nodes, this gives
+Xavier initialization, while \textcite{he_2015} double the variance to make up for
+ReLU setting half of its inputs to zero:
+\begin{equation}\label{eq:initialization}
+\begin{aligned}
+    W^l_{ij} &\sim \mathcal{N}\!\left(0, \frac{2}{n_{l-1} + n_l}\right)
+    &&\text{(Xavier)}, \\
+    W^l_{ij} &\sim \mathcal{N}\!\left(0, \frac{2}{n_{l-1}}\right)
+    &&\text{(He)}.
+\end{aligned}
+\end{equation}
+We use Xavier for the hidden layers of sigmoid networks and He for those of the
+ReLU family, and initialize all biases to zero.
+
+\subsubsection{Regularization}
+% $\ell_2$ regularization as weight decay, explicitly the same term as Ridge.
+
+A network with more parameters than data points available can fit the entire training set
+exactly, so applying regularization is essential~\cite{hjorth-jensen_2026}. We add the
+penalties of \cref{eq:penalties}, which play the same role for the network as Ridge and
+Lasso do for the linear model. With plain gradient descent, the $\ell_2$ penalty turns the
+weight update into
+\begin{equation}\label{eq:weight-decay}
+    \bm{W}^l \leftarrow (1 - 2\gamma\lambda)\,\bm{W}^l - \gamma\frac{\partial C}{\partial \bm{W}^l},
+\end{equation}
+so each step shrinks all weights towards zero by the same factor, which is why it is also
+known as weight decay~\cite{goodfellow_2016}. The $\ell_1$ penalty instead reduces the
+magnitude of each weight by the constant $\gamma\lambda$, which favors sparse weights,
+although with a subgradient and a finite step the small weights oscillate around zero
+rather than becoming exactly zero. With RMSprop and Adam, the penalty gradient is rescaled
+together with the rest of the gradient, so the shrinkage is no longer the same for all
+weights. The biases are not penalized: each bias only shifts the input to a single node,
+so it adds little flexibility to the network, and penalizing it can cause
+underfitting~\cite{goodfellow_2016}. The strength $\lambda$ is a hyperparameter, chosen on
+validation data together with the others.
+
+Early stopping is a form of regularization that limits overfitting by
+terminating training when performance on a validation set ceases to
+improve~\cite{hjorth-jensen_2026}. While the training loss may continue
+to decrease, an increasing validation loss can indicate that the model
+is beginning to overfit the training data~\cite{geron_2023}. We therefore
+monitor the validation loss throughout training and stop if it has not
+decreased for a given number of epochs, the patience. The model weights are subsequently
+restored to those obtained at the epoch with the lowest validation loss.
+
+\subsection{Evaluation}\label{subsec:evaluation}
+
+A model cannot be trusted without any metrics for evaluating its performance.
+For regression, we evaluate a prediction $\tilde{\bm{y}}$ of targets $\bm{y}$ by
+\begin{equation}
+    \mathrm{MSE} = \frac{1}{n}\sum_{i=0}^{n-1}(y_i-\tilde{y}_i)^2, \quad
+    R^2 = 1 - \frac{\sum_{i=0}^{n-1} (y_i - \tilde{y}_i)^2}{\sum_{i=0}^{n-1} (y_i - \bar{y})^2},
+\end{equation}
+with $\bar{y}$ the mean of $\bm{y}$. An unbiased model with no variance reaches
+$\mathrm{MSE} = \sigma^2$ in expectation; $R^2$ compares against predicting
+$\bar{y}$ and is negative for a model that does worse than that constant~\cite{hjorth-jensen_2026}.
+
+For classification, the predicted class $\tilde{y}_i = \arg\max_k p_{ik}$ is the class with the
+highest predicted probability, and the simplest measure is the accuracy,
+\begin{equation}\label{eq:accuracy}
+    \text{Accuracy} = \frac{1}{n}\sum_{i=0}^{n-1} I(\tilde{y}_i = y_i),
+\end{equation}
+where the indicator function $I$ is 1 if the prediction is correct and 0
+otherwise~\cite{hjorth-jensen_2026}. A single number hides which classes are confused with
+which, so we also compute the confusion matrix $\bm{N}$, where $N_{jk}$ counts the samples of
+true class $j$ predicted as class $k$. Correct predictions lie on the diagonal, and the
+accuracy is $\operatorname{tr}(\bm{N})/n$. From $\bm{N}$, the precision and recall of class $k$ are
+\begin{equation}\label{eq:precision-recall}
+    \text{Precision}_k = \frac{N_{kk}}{\sum_j N_{jk}}, \qquad
+    \text{Recall}_k = \frac{N_{kk}}{\sum_j N_{kj}},
+\end{equation}
+the fraction of predictions of class $k$ that are correct, and the fraction of samples of
+class $k$ that are found. Normalizing each row of $\bm{N}$ by its sum therefore puts the recall
+on the diagonal. The $F_1$ score of class $k$ is the harmonic mean of the two,
+\begin{equation}\label{eq:f1}
+    F_{1,k} = 2\,\frac{\text{Precision}_k \cdot \text{Recall}_k}
+    {\text{Precision}_k + \text{Recall}_k},
+\end{equation}
+which is high only if both are. We summarize the per-class scores by their unweighted mean,
+the macro average, which weights every class equally regardless of its
+size~\cite{hjorth-jensen_2026}.
