@@ -57,7 +57,19 @@ Compared with Linear and Logistic Regression}
 % Abstract. 120-180 words, one paragraph, no citations or equations.
 % Past tense for what you did, and at least one concrete result.
 \begin{abstract}
-abstract.
+Neural networks learn their own features, while linear models depend on features chosen by
+hand, but this flexibility comes at a cost. We asked when the flexibility of a neural network
+is worth this cost. We implemented feed-forward neural networks from scratch, verified
+backpropagation against automatic differentiation, and compared them with linear regression
+on the one-dimensional Runge function and with logistic regression on the MNIST handwritten
+digits. On Runge's function, small networks approximated the true function about an order of
+magnitude better than polynomial regression, which oscillated near the ends of the interval,
+while larger networks overfit unless they were regularized. On MNIST, a network with four
+hidden layers reached a test accuracy of 97.7\%, against 92.6\% for logistic regression,
+mainly by separating digits with similar strokes. The networks were, however, far more
+expensive to tune and more fragile to train. The lesson is that a network pays off when good
+features are hard to design by hand, as for images, while a linear model with suitable
+features remains a cheap and robust choice.
 \end{abstract}
 
 \begin{IEEEkeywords}
