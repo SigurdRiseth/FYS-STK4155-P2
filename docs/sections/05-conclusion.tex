@@ -3,8 +3,33 @@
 % Summarize the central findings, state the limitations of the study, and
 % outline concrete future work/extensions.
 
-TODO: conclusion.
+We implemented feed-forward neural networks from scratch, verified the gradients from
+backpropagation against automatic differentiation, and compared the networks with linear and
+logistic regression on two problems.
 
-Findings, limitations, future work, LLM declaration
-% Dropout, scaling between layers(?), CNN,
-% test other data sets (3D runge and Fashion MNIST), etc.
+On Runge's function, small networks approximated the true function about an order of
+magnitude better than the polynomial models of Project~1, which oscillate near the ends of the
+interval. Small networks were best, since larger ones fit the noise; for ReLU networks, an
+$\ell_1$ or $\ell_2$ penalty removed most of this overfitting, while sigmoid networks did not
+benefit from it. On MNIST, a network with four hidden ReLU layers reached a test accuracy of
+97.7\%, against 92.6\% for logistic regression, and corrected most of the confusion between
+digits that share strokes. Here width mattered more than depth, and a decaying learning rate
+and early stopping gave a clear improvement. Our implementation performed on par with or
+better than Scikit-Learn for both models.
+
+The networks were the most accurate models for both tasks, but also the most expensive and
+the most sensitive to their hyperparameters. Their flexibility paid off most for images, where
+good features are hard to design by hand. As discussed in \cref{subsec:critical-evaluation},
+the conclusions rest on single training runs, a small regression test set and coarse search
+grids.
+
+Natural extensions are to repeat the experiments over several random initializations to
+measure the variation between runs, to search wider networks for MNIST, and to use the
+learning rate schedule also for regression. Dropout and batch normalization could reduce
+overfitting and ease the training of deep sigmoid networks, and convolutional networks would
+exploit the spatial structure of the images that a fully connected network ignores. Finally,
+the methods could be tested on harder data, such as Runge's function in two or three
+dimensions and the Fashion-MNIST data set.
+
+The use of large language models in this project is declared in
+Appendix~\ref{app:ai-tools}.
