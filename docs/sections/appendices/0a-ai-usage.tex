@@ -9,10 +9,16 @@ and verified by the author.
 
 \subsubsection{Tools used}
 \begin{itemize}
-    \item TODO: tools, models, and dates.
+    \item Claude Code (Claude Opus 5.5, accessed via the command-line interface,
+    November 2026)
+    \item ChatGPT (various models, accessed via the web, November 2026)
 \end{itemize}
 
-TODO: summary of how each tool was used.
+Claude Code was used as a coding assistant with access to the repository: to build the
+classification experiments, extend the training loop, write tests, and fix linting and type
+errors. It was also used to review and restructure the report, and to give feedback on
+drafted sections. ChatGPT was sometimes used to ask for feedback on sections of the
+report and to discuss results.
 
 \subsubsection{Text writing and editing}
 \Cref{tab:llm-writing-contribution} gives the contribution level for each part
@@ -28,10 +34,18 @@ of the report.
         \textbf{Section} & \textbf{Level} & \textbf{Notes} \\
         \midrule
         Abstract & TODO & \\
-        Introduction & TODO & \\
-        Methods & TODO & \\
-        Implementation & TODO & \\
-        Results and discussion & TODO & \\
+        Introduction & TODO & Revised by LLM from the author's draft: made the opening
+        specific to this project, stated the aim and datasets, and shortened the outline \\
+        % Levels above 1 are not allowed by the course; set after rewriting the LLM drafts
+        Methods & TODO & Section order restructured by LLM; drafts of the MSE, penalty,
+        momentum, adaptive learning rate and classification metric parts, and a revision of
+        the binary cross entropy part; shortened the part on output layers and loss functions;
+        drafts of the weight initialization and regularization parts; corrected the
+        backpropagation equations \\
+        Implementation & TODO & Drafted and shortened by LLM \\
+        Results and discussion & TODO & LLM suggested moving the MNIST description to
+        \cref{sec:implementation}; drafted the regularization part of the regression results
+        and revised two regression paragraphs; drafted the classification results \\
         Conclusion & TODO & \\
         Appendices & TODO & \\
         \bottomrule
@@ -55,7 +69,15 @@ docstring.
         \texttt{regression.ipynb} & 3 & Refactoring code and markdown cells for readability
         and write the code for producing \cref{fig:model-comparison}. Parallelize the CV search for
         optimal hyperparameters. \\
-        \texttt{classification.ipynb} & ... & ... \\
+        \texttt{classification.ipynb} & 4 & Wrote most of the notebook: the logistic regression
+        baseline, the hyperparameter searches with cached results, the comparison of learning
+        rate schedules, the figures, and the comparison with Scikit-Learn. Grids and experiment
+        design chosen by the author. \\
+        \texttt{nn/network.py} & 2 & Completed the author's draft of learning rate schedules
+        and early stopping in \texttt{FFNN.fit}. \\
+        \texttt{tests/test\_network.py} & 4 & Wrote the test comparing backpropagation with
+        \texttt{jax.grad}. \\
+        \texttt{tests/test\_logistic.py} & 1 & Fixed two type errors flagged by mypy. \\
         \bottomrule
     \end{tabularx}}
 \end{table*}

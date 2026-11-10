@@ -1,7 +1,66 @@
 \subsection{Additional results}
 \label{app:additional-results}
 
-% Supplementary figures/tables that support but don't belong in the main
-% results section.
+This appendix contains figures that support the discussion in
+\cref{sec:results-discussion}, but are not needed to follow it.
 
-TODO: additional results.
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/history.pdf}
+     \caption{Training MSE per epoch for the selected FFNNs: one hidden layer of 50 nodes
+     (Adam, $\gamma=0.1$, 100 epochs) and two hidden layers of 100 nodes (RMSProp,
+     $\gamma=10^{-4}$, 10000 epochs), both with a batch size of 32. The larger network
+     stays at the mean prediction, with an MSE near the variance of the targets, for a large
+     part of the training.}
+     \label{fig:training-history}
+\end{figure}
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/activation_comparison.pdf}
+     \caption{Predictions of the best sigmoid, ReLU and Leaky ReLU networks from
+          \cref{tab:activation-comparison}, together with the Runge function and the
+          noisy training and test data. The ReLU and Leaky ReLU curves are nearly
+          identical and consist of a few straight segments, while the sigmoid curve
+          is smooth.}
+     \label{fig:activation-comparison}
+\end{figure}
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/regression/regularization_comparison.pdf}
+     \caption{The best $\ell_2$ and $\ell_1$ regularized networks, compared with the
+          Ridge and Lasso models of Project~1, together with the Runge function and the
+          noisy training and test data. Ridge oscillates near $x = 1$ and Lasso underfits
+          the peak, while both networks follow the function closely.}
+     \label{fig:regularization-comparison}
+\end{figure}
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/classification/logreg_confusion_matrix.pdf}
+     \caption{Confusion matrix of logistic regression on the validation set, normalized by
+     row so that the diagonal is the recall of each digit (\%). Most errors are between
+     digits that share strokes, such as 3, 5 and 8.}
+     \label{fig:logreg-matrix}
+\end{figure}
+
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/classification/ffnn_regularization.pdf}
+     \caption{Validation accuracy (\%) of the selected architecture for each learning rate
+     and $\ell_2$ penalty. A small penalty helps slightly, while a large one, especially
+     with a large learning rate, makes training fail.}
+     \label{fig:ffnn-regularization}
+\end{figure}
+
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=0.8\textwidth]{figures/regression/regularization_heatmaps.pdf}
+     \caption{Cross-validated MSE over the penalty $\lambda$ and the learning rate $\gamma$,
+          for the architecture of the best configuration of each activation and norm. The
+          framed cell is the minimum. The ReLU family has its minimum at $\lambda = 10^{-3}$
+          for both norms, while every sigmoid network collapses to predicting the mean for
+          all but the smallest penalties.}
+     \label{fig:regularization-heatmaps}
+\end{figure*}

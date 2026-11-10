@@ -40,14 +40,15 @@ final comparison of the selected models.
 \subsection{Code structure}\label{subsec:code-structure}
 
 Dense layers and activation functions are separate layers of the network, so any activation
-can be placed after any layer. The weights are drawn from a normal distribution with Xavier~\cite{glorot_2010}
-or He~\cite{he_2015} scaling, matched to the activation, and the biases are initialized to zero. The sigmoid
+can be placed after any layer, and the weights are initialized as in
+\cref{eq:initialization}. The sigmoid
 and the softmax are part of the cross entropies, so classification networks end in a linear
 layer that outputs logits. Logistic regression is the same network with a single dense layer.
 The network is trained as in \cref{alg:gd}.
 
 \begin{algorithm}
-    \caption{Training of the FFNN with minibatches and early stopping}
+    \caption{Training of the FFNN with minibatches, learning rate scheduling
+    and early stopping}
     \label{alg:gd}
     {\small
     \begin{algorithmic}[1]
@@ -87,9 +88,9 @@ corresponding figures.
 
 For classification, configurations are scored by their accuracy on the validation set. All
 models are trained with Adam and a batch size of 128, logistic regression for 50 epochs over a
-grid of $\gamma$ and $\lambda$. The networks are trained for at most 30 epochs with early
+grid of $\gamma$ and $\lambda$. The networks are trained for at most 50 epochs with early
 stopping with a patience of 5 epochs, and an exponentially decaying learning rate that falls by
-a factor of 10 over 30 epochs. We first search over the activation, the depth, the width and
+a factor of 10 over 50 epochs. We first search over the activation, the depth, the width and
 $\gamma$ without regularization, and then over $\gamma$ and $\lambda$ for the best architecture
 (\cref{tab:classification-hyperparameter-search}). The selected network is retrained with the
 same procedure, so the reported model is exactly the one that was scored.

@@ -8,45 +8,43 @@
 % libraries. End with a paragraph on the report's structure and the repo link.
 % No results in the introduction.
 
-In the essay \citetitle{sutton_2019}, Richard \textcite{sutton_2019}
+In the essay \citetitle{sutton_2019}~\cite{sutton_2019}, Richard Sutton
 argues that the most significant advances in artificial intelligence
 have ultimately come from general methods that leverage computation,
 rather than approaches relying on extensive human-engineered domain
-knowledge. This observation highlights a central idea in modern machine
-learning: the ability to learn patterns and representations directly
-from data, rather than explicitly specifying how a problem should be
-solved. Artificial neural networks are one such approach, providing a
-flexible framework for learning complex relationships from data.
+knowledge. The step from Project~1~\cite{riseth_2026} to this project
+is a small instance of this idea. There, we chose the features ourselves,
+as powers of $x$ in a polynomial design matrix. A neural network instead
+takes the raw input, whether a single coordinate or the pixels of an
+image, and learns its own features from the data.
 
-Linear and logistic regression provide relatively simple approaches
-to regression and classification, respectively. While these models
-offer interpretable and computationally efficient solutions, their
-predictive capabilities are constrained by their functional form.
-Neural networks extend this framework through compositions of
-parameterized transformations and nonlinear activation functions,
-allowing them to represent more complex relationships between inputs
-and outputs. This increased flexibility, however, also introduces
-challenges related to model architecture, optimization, and
-generalization.
+Hand-made features have clear limits. In Project~1, polynomial fits to
+Runge's function oscillated near the endpoints of the interval, and
+logistic regression on raw pixels can only match each image against a
+fixed template per class, so a digit that is shifted or slanted is easily
+misclassified. Neural networks remove this limitation through
+compositions of linear maps and nonlinear activation functions, at the
+price of a non-convex cost, more hyperparameters and longer training.
+For a smooth one-dimensional function, however, ordinary least squares
+is cheap, has a closed-form solution and is hard to beat. The question
+is therefore not whether a network is more flexible, but when its
+flexibility is worth its cost.
 
-The objective of this project is to implement and investigate
-feed-forward neural networks (FFNNs) for regression and classification.
-In particular, we study the effects of network architecture,
-activation functions, and optimization algorithms on model performance
-and training behavior. We also compare the resulting models with
-linear and logistic regression approaches,
-examining the trade-offs between model complexity, predictive
-performance, and computational cost.
+To answer it, we implement feed-forward neural networks (FFNNs) from
+scratch, including backpropagation, the cost functions and the $\ell_1$
+and $\ell_2$ penalties, and train them with the gradient descent methods
+of Project~1. We apply them to two problems: regression of Runge's
+function, compared with OLS, Ridge and Lasso, and classification of the
+handwritten digits of the MNIST dataset~\cite{lecun_2010}, compared with
+logistic regression and a majority-class baseline. We study plain and
+stochastic gradient descent with RMSprop and Adam, the learning rate and
+its schedule, the depth and width of the network, the activation
+function, and the penalty, and we compare our implementation with
+Scikit-Learn~\cite{pedregosa_2011}.
 
-The remainder of this report is structured as follows.
-\Cref{sec:method} presents the theoretical background and methods
-used to construct and train the networks.
-\Cref{sec:implementation} describes the datasets, preprocessing,
-implementation details, and verification of the code.
-\Cref{sec:results-discussion} presents and discusses the results,
-including comparisons with the linear and logistic regression models.
-Finally, \Cref{sec:conclusion} summarizes the main findings and
-outlines possible directions for future work. Appendix
-\ref{app:ai-tools} documents our use of large language models.
-The code and results underlying the figures and tables are available
-in our publicly hosted repository~\cite{riseth_2026a}.
+\Cref{sec:method} presents the theory and \cref{sec:implementation} the
+data, the implementation and its verification.
+\Cref{sec:results-discussion} presents and discusses the results and
+ends with a critical evaluation of the methods, and \cref{sec:conclusion} concludes.
+Appendix~\ref{app:ai-tools} documents our use of large language models,
+and the code is available in our repository~\cite{riseth_2026a}.

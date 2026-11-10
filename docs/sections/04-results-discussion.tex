@@ -1,9 +1,6 @@
 \section{Results and Discussion}
 \label{sec:results-discussion}
 
-% Present and discuss results together, ordered to match the structure of
-% \cref{sec:method}. Break into \subsection{}s as the content develops.
-
 This section presents and discusses the results from our experiments. First we
 cover the regression task, comparing linear regression to regression using FFNNs;
 afterward we cover the classification task of classifying handwritten digits
@@ -60,23 +57,15 @@ and high MSE vs $f$ score, suggests that the polynomial model is sensitive to th
 in the training data and exhibits overfitting. The FFNN models provide a better
 approximation of the true function, despite both having a slightly higher training MSE.
 
-The cost of choosing a larger neural network is shown in \cref{fig:training-history},
-where we can see how the larger model gets stuck at a plateau around $0.1$, matching
-the variance of the training targets ($0.103$), for a large period of the training. At
-this plateau, the model is predicting the mean of the data, and the gradient pointing
-towards useful curved features is tiny. This is the well-known plateau behavior of
-sigmoid networks~\cite{saxe_2014}, which can be avoided by using ReLU, or its variants,
-or applying batch normalization. \textbf{[HOW TRUE IS THE "COST" PART??? THEY USE
-DIFFERENT LEARNING RATES, OPTIMIZERS AND EPOCH COUNTS!!!]}
-
-\begin{figure}[htbp]
-     \centering
-     \includegraphics[width=\linewidth]{figures/regression/history.pdf}
-     \caption{Training MSE per epoch for the selected FFNNs: one hidden layer of 50 nodes
-     (Adam, $\gamma=0.1$, 100 epochs) and two hidden layers of 100 nodes (RMSProp,
-     $\gamma=10^{-4}$, 10000 epochs), both with a batch size of 32.}
-     \label{fig:training-history}
-\end{figure}
+The two networks were selected with different optimizers, learning rates and numbers of
+epochs, so their training histories (\cref{fig:training-history}) do not isolate the
+effect of size. They do, however, show a behavior common to our sigmoid networks: the
+network with two hidden layers, trained with RMSprop at $\gamma = 10^{-4}$, stays at a
+plateau around $0.1$, the variance of the training targets ($0.103$), for a large part of
+the training. At this plateau, the network predicts the mean of the data, and the gradient
+towards curved features is small. This is the plateau behavior known for sigmoid
+networks~\cite{saxe_2014}, and the sigmoid networks of \cref{fig:activation-curves} show the
+same plateau with Adam, regardless of their size.
 
 Meanwhile, in \cref{fig:optimizer-curves}, we can see how Adam and RMSProp escape much
 sooner than plain gradient descent at the same learning rate. Additionally, a higher
@@ -116,8 +105,11 @@ activations, and no configuration diverged.
 \end{figure}
 
 \Cref{tab:activation-comparison} shows how each activation function's best fit aligns with
-Runge's function. ReLU-family networks are able to reach lower training loss but slightly
-higher test loss than sigmoid networks, consistent with fitting noise \textbf{[WAY TOO SMALL DIFFERENCES!?]}. In \cref{fig:activation-comparison},
+Runge's function. The differences in training and test MSE are too small to separate the
+activations: with only 20 test samples and noise variance $\sigma^2 = 0.01$, the test MSE has
+a standard error of roughly $\sigma^2\sqrt{2/20} \approx 0.003$, and all three networks are
+close to the noise floor. Only the MSE against $f$, which is free of noise, favors the
+sigmoid network. In \cref{fig:activation-comparison},
 we can also observe how the ReLU networks are piecewise linear with only a few visible
 kinks, so they approximate the peak and the tails with straight segments. Sigmoids naturally
 give smooth curves, which may suit Runge's function better.
@@ -139,72 +131,135 @@ give smooth curves, which may suit Runge's function better.
     \end{tabular}}
 \end{table}
 
+The deeper networks overfit. In \cref{fig:activation-curves}, the training MSE of the
+largest networks ($8 \times 160$) falls below the noise floor $\sigma^2$, while their
+validation MSE levels off well above it. The gap is much smaller for the smallest networks.
+
 \begin{figure}[htbp]
      \centering
-     \includegraphics[width=\linewidth]{figures/regression/activation_comparison.pdf}
-     \caption{Predictions of the best sigmoid, ReLU and Leaky ReLU networks from
-          \cref{tab:activation-comparison}, together with the Runge function and the
-          noisy training and test data. The ReLU and Leaky ReLU curves are nearly
-          identical and consist of a few straight segments, while the sigmoid curve
-          is smooth.}
-     \label{fig:activation-comparison}
+     \includegraphics[width=\linewidth]{figures/regression/activation_curves.pdf}
+     \caption{Training (dashed) and validation (solid) MSE per epoch for the smallest
+          ($1 \times 10$) and largest ($8 \times 160$) network of each activation, each
+          at its best learning rate, trained with Adam and a batch size of 32 on four fifths
+          of the training data and validated on the remaining fifth.}
+     \label{fig:activation-curves}
 \end{figure}
 
 \subsubsection{Adding regularization}
+
+Since the deeper and wider networks overfit, we add the $\ell_1$ and $\ell_2$ penalties of
+\cref{eq:penalties} to the networks with four and eight hidden layers of 40 and 80 nodes,
+and search over $\lambda \in \{0, 10^{-5}, \dots, 10^{-1}\}$ and
+$\gamma \in \{10^{-2}, 10^{-3}, 10^{-4}\}$, with the training setup of
+\cref{fig:activation-architectures}. \Cref{fig:regularization-lambda} shows the
+training and cross-validated MSE as functions of $\lambda$, and
+\cref{fig:regularization-heatmaps} shows the full search over $\lambda$ and $\gamma$.
+
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=0.8\textwidth]{figures/regression/regularization_lambda.pdf}
+     \caption{Training (dashed) and 5-fold cross-validated (solid) MSE as functions of the
+          penalty strength $\lambda$ for each activation, norm and architecture, each at its
+          best learning rate $\gamma \in \{10^{-2}, 10^{-3}, 10^{-4}\}$. All networks are
+          trained with Adam for 5000 epochs with a batch size of 32. $\lambda = 0$ is drawn
+          one decade below the smallest $\lambda$.}
+     \label{fig:regularization-lambda}
+\end{figure*}
+
+For the ReLU family, both penalties give the U-shaped curve expected from the
+bias--variance trade-off. Without a penalty, the training MSE is between $0.005$ and $0.007$,
+well below $\sigma^2 = 0.01$, so the networks fit the noise. At $\lambda = 10^{-3}$, the
+training MSE rises towards $\sigma^2$ and the cross-validated MSE reaches its minimum, while
+at $\lambda = 10^{-1}$, the weights are shrunk until the network predicts the mean, with an
+MSE equal to the variance of the targets. The penalty helps most where the overfitting was
+worst: for ReLU ($4 \times 80$), $\ell_1$ lowers the cross-validated MSE from $0.0178$ to
+$0.0106$, and for Leaky ReLU ($8 \times 40$), $\ell_2$ lowers it from $0.0230$ to $0.0111$.
+The regularized networks thus perform as well as the best small networks without a penalty
+($0.0109$, \cref{fig:activation-architectures}), so for the ReLU family, the penalty can replace
+a careful choice of architecture. The two norms select the same $\lambda$, and their best cross-validated MSEs differ by
+less than $0.0005$. Since we use a subgradient with a finite step, we would not expect
+$\ell_1$ to give the exactly sparse weights of Lasso either.
+
+The sigmoid networks behave differently. The best sigmoid configuration has $\lambda = 0$ for
+both norms, and already at $\lambda = 10^{-4}$ for $\ell_1$ and $10^{-3}$ for $\ell_2$, every
+sigmoid network predicts the mean. A possible explanation is that the penalty is summed over
+all weights and is not divided by $n$, so for networks of this size it is comparable to the
+MSE already at small $\lambda$. A ReLU network can keep its function while redistributing the
+size of the weights between layers, since $\mathrm{ReLU}(cz) = c\,\mathrm{ReLU}(z)$ for
+$c > 0$. A sigmoid network has no such freedom: small weights put each node in the nearly
+linear region of the sigmoid around $z = 0$, and the network loses the curvature it needs for
+the peak. The unregularized sigmoid networks also overfit less to begin with
+(\cref{fig:activation-curves}), so there is little for the penalty to gain.
+
+\Cref{tab:regularization-comparison} and \cref{fig:regularization-comparison} compare the
+best regularized networks with the Ridge and Lasso models of Project~1~\cite{riseth_2026},
+selected with 5-fold cross-validation on the same training data. The networks approximate $f$
+6 and 5 times better, respectively. Ridge, with a degree of 11 and a small penalty, still
+oscillates near $x = 1$, while Lasso, with a degree of 6, underfits the peak. The Lasso
+model is weaker than it could be, since our Lasso solver did not converge for high degrees in
+Project~1, which pushed the selection towards a low degree and a large penalty. Note also that
+the values of $\lambda$ are not comparable between the models, since they penalize
+parameters of different number and meaning.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Training and test performance of the best regularized networks and the
+          Ridge and Lasso models of Project~1 on Runge's function.}
+    \label{tab:regularization-comparison}
+    {\footnotesize\setlength{\tabcolsep}{4pt}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        Model & Train MSE & Test MSE & MSE vs $f$ \\
+        \midrule
+        Ridge ($p = 11$, $\lambda = 10^{-6}$) & $0.0084$ & $0.0100$ & $0.0097$ \\
+        ReLU ($4 \times 40$), $\ell_2$, $\lambda = 10^{-3}$ & $0.0083$ & $0.0076$ & $0.0016$ \\
+        Lasso ($p = 6$, $\lambda = 10^{-2.5}$) & $0.0202$ & $0.0187$ & $0.0101$ \\
+        ReLU ($4 \times 80$), $\ell_1$, $\lambda = 10^{-3}$ & $0.0086$ & $0.0085$ & $0.0022$ \\
+        \bottomrule
+    \end{tabular}}
+\end{table}
 
 \subsection{Image classification}
 
 \subsubsection{Logistic regression}
 
-To judge whether hidden layers are worth their cost, we first need a baseline.
-Multinomial logistic regression is the FFNN with no hidden layers: a single dense
-layer maps the 784 pixels to 10 logits, followed by the softmax and the cross entropy.
-The model cannot learn features of its own, so each class score is a weighted sum of
-the raw pixel values.
+Logistic regression is the network with no hidden layers, so each class score is a weighted
+sum of the raw pixels. It reaches a test accuracy of about 93\%
+(\cref{tab:classification-accuracy}), far above the 11\% of always guessing the most common
+digit.
 
-The selected model reaches a test accuracy of 92.6\% (\cref{tab:classification-accuracy}), in
-line with the roughly 92\% expected for logistic regression on raw pixels, and far
-above the 11.4\% obtained by always predicting the most common digit.
-
-The accuracy hides significant differences between the digits. The confusion matrix in
-\cref{fig:logreg-matrix} shows a recall of about 97\% for 0 and 1, but only 87\% for 5
-and 89\% for 2, with most errors between digits that share strokes, such as
-5 and 3. Because the model is linear, each column of the weight matrix can be viewed as
-a $28 \times 28$ template (\cref{fig:logreg-weights}). These templates are tied to fixed
-pixel positions, so a digit that is shifted or slanted matches the wrong template.
-Learning features that handle this kind of variation is what we expect hidden layers to do.
-
-\begin{figure}[htbp]
-     \centering
-     \includegraphics[width=\linewidth]{figures/classification/logreg_confusion_matrix.pdf}
-     \caption{Confusion matrix of the selected logistic regression model on the validation
-     set, normalized by row so that the diagonal shows the recall of each digit (\%).}
-     \label{fig:logreg-matrix}
-\end{figure}
+The errors are not spread evenly. Digits with a distinctive shape, such as 0 and 1, are
+almost always recognized, while digits that share strokes, such as 3, 5 and 8, are often
+confused (\cref{fig:logreg-matrix}). The weights explain why: each digit has a single
+template tied to fixed pixel positions (\cref{fig:logreg-weights}), so a digit that is
+shifted, slanted or written in an unusual style matches the wrong template. Handling this
+variation requires features that are learned from the data, which is what we expect the
+hidden layers to provide.
 
 \begin{figure*}[htbp]
      \centering
      \includegraphics[width=\linewidth]{figures/classification/logreg_weights.pdf}
-     \caption{Weights of the logistic regression model for each digit, reshaped to
-     $28 \times 28$. Red pixels increase the score for the digit and blue pixels decrease
-     it.}
+     \caption{Weights of logistic regression for each digit, reshaped to $28 \times 28$.
+     Red pixels increase the score of the digit and blue pixels decrease it. Each digit is
+     recognized by a single, blurred template at a fixed position.}
      \label{fig:logreg-weights}
 \end{figure*}
 
 \subsubsection{Neural networks}
 
-For the FFNN, we use our validation set for model selection and tuning of hyperparameters.
-The search space defined in \cref{tab:classification-hyperparameter-search} was searched
-for 10 epochs and the best performing model on the validation set was selected.
-We see that the best performing model is the largest possible ReLU network, with a
-moderate learning rate, allowing the network to capture complex features of the images.
-This also illustrates a weakness of our experiment, as an even larger model might have
-performed even better.
+\Cref{tab:classification-hyperparameter-search} summarizes the search and the selected
+network. \Cref{fig:hyperparameter-search} shows that width matters more than depth: for all
+activations, going from 20 to 80 nodes per layer helps, while more than four hidden layers
+gives nothing for the ReLU family. The sigmoid networks behave differently. They need more
+epochs, prefer large learning rates, and fail when the network is deep, which is consistent
+with the vanishing gradients discussed in \cref{subsec:neural-networks}. The ReLU family
+trains well over a wide range of learning rates, but fails at $\gamma = 10^{-1}$.
+The best network is the widest in the grid, so a wider network might have done even better.
 
 \begin{table}[htbp]
     \centering
-    \caption{Classification FFNN hyperparameter search space and selected
-    configuration based on validation performance.}
+    \caption{Search space and selected configuration of the classification network, chosen
+    by the validation accuracy.}
     \label{tab:classification-hyperparameter-search}
     \footnotesize
     \setlength{\tabcolsep}{5pt}
@@ -212,53 +267,84 @@ performed even better.
         \toprule
         Hyperparameter & Search space & Selected \\
         \midrule
-        Number of layers
-            & $\{4, 8\}$ & $8$ \\
-        Nodes per layer
-            & $\{40, 80, 160\}$ & $160$ \\
-        Learning rate ($\gamma$)
-            & $\{10^{-5}, 10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}\}$
-            & $10^{-3}$ \\
-        Activation function
-            & Sigmoid, ReLU, Leaky ReLU & ReLU \\
-        $\ell_2$ regularization ($\lambda$)
-            & $\{10^{-1}, 10^{-2}, 10^{-3}, 10^{-4}, 0\}$
-            & $0$ \\
+        Activation function & Sigmoid, ReLU, Leaky ReLU & ReLU \\
+        Hidden layers & $\{4, 8, 12\}$ & $4$ \\
+        Nodes per layer & $\{20, 40, 80\}$ & $80$ \\
+        Learning rate $\gamma$ & $\{10^{-5}, \dots, 10^{-1}\}$ & $10^{-2}$ \\
+        $\ell_2$ penalty $\lambda$ & $\{0, 10^{-4}, \dots, 10^{-1}\}$ & $10^{-4}$ \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-The hyperparameter search's various architecture performances are summarized in
-\cref{fig:hyperparameter-search}, where each combination of activation function and
-number of hidden layers and nodes has its best validation accuracy and the learning
-rate which gave it listed. Here we see that both ReLU and Leaky ReLU prefer the
-larger networks, but the gains are marginal ($0.5\%$ validation accuracy gain from
-$4\times 40$ vs.\ $8 \times 160$).
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=0.8\textwidth]{figures/classification/ffnn_architectures.pdf}
+     \caption{Validation accuracy of each architecture without a penalty, at its best
+     learning rate (shown in each cell). Wider networks are better for all activations,
+     while depth beyond four layers does not help the ReLU family and harms the sigmoid.}
+     \label{fig:hyperparameter-search}
+\end{figure*}
+
+For the selected architecture, a small penalty gives a slight improvement, while
+$\lambda > 10^{-2}$ clearly hurts (\cref{fig:ffnn-regularization}). With
+$60\,000$ training images and early stopping, the network does not overfit much, so there is
+little for the penalty to correct. Large penalties combined with large learning rates make
+training fail, and the network falls back to predicting a single digit.
+
+\Cref{fig:ffnn-learning-curve} shows what the learning rate schedule and early stopping
+add. With a constant learning rate, the validation cost stops improving early and becomes
+noisy, while the decaying learning rate keeps lowering it and gives a clearly better network.
+Early stopping ends training at about half the maximum number of epochs, with almost the same
+accuracy as training for all of them.
 
 \begin{figure}[htbp]
      \centering
-     \includegraphics[width=\linewidth]{figures/classification/ffnn_architectures.pdf}
-     \caption{.}
-     \label{fig:hyperparameter-search}
+     \includegraphics[width=\linewidth]{figures/classification/ffnn_learning_curve.pdf}
+     \caption{Training (dashed) and validation (solid) cost per epoch of the selected network,
+     trained for all 50 epochs with a constant and an exponentially decaying learning rate.
+     The decay gives a lower validation cost, and early stopping (dotted) ends training
+     where the gains have become small.}
+     \label{fig:ffnn-learning-curve}
 \end{figure}
 
-The final model was retrained for 30 epochs, tracking the validation cost for identifying
-potential overfitting.
+\subsubsection{Comparison on the test set}
+
+On the test set, the network reduces the error rate of logistic regression by a factor of
+three (\cref{tab:classification-accuracy}). The improvement is largest for the digits
+that logistic regression confused most, such as 3, 5 and 8 (\cref{fig:ffnn-matrix}). The accuracy and the
+macro-averaged $F_1$ score are almost equal for all models, since MNIST is close to balanced.
+
+Our implementations agree well with Scikit-Learn. Our logistic regression is slightly better,
+and our network is about 1.5 percentage points better than \texttt{MLPClassifier} with the same
+architecture, which has neither our learning rate schedule nor early stopping. This gap is
+similar to the one between the constant and decaying learning rate in
+\cref{fig:ffnn-learning-curve}.
 
 \begin{table}[htbp]
     \centering
-    \caption{Test accuracy and macro-averaged F1 score of the classification models.}
+    \caption{Test accuracy and macro-averaged $F_1$ score of the selected models.}
     \label{tab:classification-accuracy}
     {\footnotesize\setlength{\tabcolsep}{4pt}
     \begin{tabular}{@{}lcc@{}}
         \toprule
-        Model & Accuracy & Macro-averaged F1 \\
+        Model & Accuracy & Macro $F_1$ \\
         \midrule
-        Majority class & 0.1135 & \\
-        Logistic regression & 0.9261 & \\
-        FFNN & 0.9786 & 0.9783 \\
+        Majority class & $0.114$ & $0.020$ \\
+        Logistic regression & $0.926$ & $0.925$ \\
+        Logistic regression (Scikit-Learn) & $0.922$ & $0.921$ \\
+        FFNN & $0.977$ & $0.977$ \\
+        FFNN (Scikit-Learn) & $0.962$ & $0.961$ \\
         \bottomrule
     \end{tabular}}
 \end{table}
 
-\subsection{Critical evaluation}
+\begin{figure}[htbp]
+     \centering
+     \includegraphics[width=\linewidth]{figures/classification/ffnn_confusion_matrix.pdf}
+     \caption{Confusion matrix of the selected network on the validation set, normalized by
+     row (\%). Compared with logistic regression (\cref{fig:logreg-matrix}), the recall is
+     high for every digit.}
+     \label{fig:ffnn-matrix}
+\end{figure}
+
+\subsection{Critical evaluation}\label{subsec:critical-evaluation}
