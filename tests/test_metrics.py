@@ -1,3 +1,11 @@
+"""Tests of the classification metrics, compared with Scikit-Learn.
+
+LLM-assisted
+------------
+Tool: Claude (claude-opus-5-5, Claude Code CLI, November 2026)
+Role: Wrote most of the tests; adapted and checked by the author.
+"""
+
 import numpy as np
 import pytest
 from sklearn import metrics as sk_metrics

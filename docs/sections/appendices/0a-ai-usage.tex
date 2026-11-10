@@ -15,8 +15,9 @@ and verified by the author.
 \end{itemize}
 
 Claude Code was used as a coding assistant with access to the repository: to build the
-classification experiments, extend the training loop, write tests, and fix linting and type
-errors. It was also used to review and restructure the report, and to give feedback on
+classification experiments and the logistic regression model, turn the author's activation
+and loss functions into classes, extend the training loop, write most of the tests, and fix
+linting and type errors. It was also used to review and restructure the report, and to give feedback on
 drafted sections. ChatGPT was sometimes used to ask for feedback on sections of the
 report and to discuss results.
 
@@ -33,21 +34,20 @@ of the report.
         \toprule
         \textbf{Section} & \textbf{Level} & \textbf{Notes} \\
         \midrule
-        Abstract & TODO & \\
-        Introduction & TODO & Revised by LLM from the author's draft: made the opening
-        specific to this project, stated the aim and datasets, and shortened the outline \\
-        % Levels above 1 are not allowed by the course; set after rewriting the LLM drafts
-        Methods & TODO & Section order restructured by LLM; drafts of the MSE, penalty,
-        momentum, adaptive learning rate and classification metric parts, and a revision of
-        the binary cross entropy part; shortened the part on output layers and loss functions;
-        drafts of the weight initialization and regularization parts; corrected the
+        % Levels above 1 are not allowed by the course
+        Abstract & 1 & Language editing \\
+        Introduction & 1 & LLM suggested how to make the opening specific to this project and
+        to shorten the outline; the text was rewritten by the author \\
+        Methods & 1--2 & LLM suggested the section order and pointed out errors in the
         backpropagation equations \\
-        Implementation & TODO & Drafted and shortened by LLM \\
-        Results and discussion & TODO & LLM suggested moving the MNIST description to
-        \cref{sec:implementation}; drafted the regularization part of the regression results
-        and revised two regression paragraphs; drafted the classification results \\
-        Conclusion & TODO & \\
-        Appendices & TODO & \\
+        Implementation & 1--2 & An early example was produced with an LLM and rewritten by the
+        author; LLM feedback on length \\
+        Results and discussion & 1--3 & LLM suggested moving the MNIST description to
+        \cref{sec:implementation} and gave feedback on the presentation. In the final revision, an LLM drafted the short
+        paragraph and caption for \cref{fig:learning-rates} and the sentence on the depth of the
+        classification grid \\
+        Conclusion & 1 & Language editing \\
+        Appendices & 1 & Language editing \\
         \bottomrule
     \end{tabularx}}
 \end{table}
@@ -59,30 +59,41 @@ docstring.
 
 \begin{table*}[htbp]
     \centering
-    \caption{LLM contribution to the code (levels 0--4).}
+    \caption{LLM contribution to each code file and notebook (levels 0--4). Source files are
+    given relative to \texttt{src/fys\_stk4155\_p2/}.}
     \label{tab:code-generation}
     {\footnotesize
     \begin{tabularx}{\textwidth}{@{}l c X@{}}
         \toprule
         \textbf{File} & \textbf{Level} & \textbf{Description} \\
         \midrule
-        \texttt{regression.ipynb} & 3 & Refactoring code and markdown cells for readability
+        \texttt{notebooks/regression.ipynb} & 3 & Refactoring code and markdown cells for readability
         and write the code for producing \cref{fig:model-comparison}. Parallelize the CV search for
         optimal hyperparameters. \\
-        \texttt{classification.ipynb} & 4 & Wrote most of the notebook: the logistic regression
+        \texttt{notebooks/classification.ipynb} & 4 & Wrote most of the notebook: the logistic regression
         baseline, the hyperparameter searches with cached results, the comparison of learning
-        rate schedules, the figures, and the comparison with Scikit-Learn. Grids and experiment
-        design chosen by the author. \\
+        rate schedules, the figures, and the comparison with Scikit-Learn; moved the confusion
+        matrices to the test set. Grids and experiment design chosen by the author. \\
+        \texttt{nn/activations.py} & 3 & Functions written independently, Claude made them into classes. \\
+        \texttt{nn/layers.py} & 0 & Written independently. \\
+        \texttt{nn/losses.py} & 3 & Functions written independently, Claude made them into classes. \\
         \texttt{nn/network.py} & 2 & Completed the author's draft of learning rate schedules
         and early stopping in \texttt{FFNN.fit}. \\
+        \texttt{models/logistic.py} & 4 & Completely written by Claude from authors prompt. \\
+        \texttt{metrics.py} & 0 & Written independently, largely imported from Project~1. \\
+        \texttt{utils/logger.py} & 0 & Written independently. \\
         \texttt{tests/test\_network.py} & 4 & Wrote the test comparing backpropagation with
         \texttt{jax.grad}. \\
-        \texttt{tests/test\_logistic.py} & 1 & Fixed two type errors flagged by mypy. \\
+        \texttt{tests/test\_logistic.py} & 4 & Wrote most of the tests, and fixed two type
+        errors flagged by mypy. \\
+        \texttt{tests/test\_metrics.py} & 4 & Wrote most of the tests. \\
+        \texttt{tests/test\_main.py} & 4 & Wrote the test. \\
         \bottomrule
     \end{tabularx}}
 \end{table*}
 
 \subsubsection{Declared and undeclared use}
-TODO: one example of a use that must be declared, and one example of a use
-that need not be declared (e.g. using an LLM as a tutor and then writing
-about it in your own words).
+The test comparing backpropagation with \texttt{jax.grad} was written by Claude Code, so it
+is declared in \cref{tab:code-generation} and tagged in its docstring. Asking ChatGPT to
+explain a concept or discuss a result, and then writing about it in our own words, would not
+need to be declared.

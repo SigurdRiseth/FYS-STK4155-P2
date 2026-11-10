@@ -4,6 +4,11 @@ The baseline classifier of part e): a single Dense layer with a linear output, t
 with the binary cross entropy for two classes (sigmoid) and the categorical cross entropy
 for more (softmax, multinomial logistic regression). Since the sigmoid and softmax are
 part of the losses, this is the same model as Sections 5.3 and 5.6 of Hjorth-Jensen (2026).
+
+LLM-assisted
+------------
+Tool: Claude (claude-opus-5-5, Claude Code CLI, November 2026)
+Role: Wrote the module from the author's specification; tested by the author.
 """
 
 import numpy as np

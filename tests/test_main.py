@@ -1,3 +1,11 @@
+"""Smoke test of the package entry point.
+
+LLM-assisted
+------------
+Tool: Claude (claude-opus-5-5, Claude Code CLI, November 2026)
+Role: Wrote the test; checked by the author.
+"""
+
 import pytest
 
 from fys_stk4155_p2 import main

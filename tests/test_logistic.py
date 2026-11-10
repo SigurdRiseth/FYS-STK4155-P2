@@ -1,3 +1,11 @@
+"""Tests of logistic regression built on the FFNN.
+
+LLM-assisted
+------------
+Tool: Claude (claude-opus-5-5, Claude Code CLI, November 2026)
+Role: Wrote most of the tests; adapted and checked by the author.
+"""
+
 import numpy as np
 import pytest
 from fys_stk4155_p1.optimization.optimizers import Plain

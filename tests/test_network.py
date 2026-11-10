@@ -1,4 +1,10 @@
-"""Backpropagation in FFNN compared with automatic differentiation in JAX."""
+"""Backpropagation in FFNN compared with automatic differentiation in JAX.
+
+LLM-assisted
+------------
+Tool: Claude (claude-opus-5-5, Claude Code CLI, November 2026)
+Role: Wrote the module, including the JAX reference costs and the test.
+"""
 
 from collections.abc import Callable
 

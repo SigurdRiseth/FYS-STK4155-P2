@@ -10,7 +10,12 @@ optimizers are reused from
 [FYS-STK4155-P1](https://github.com/SigurdRiseth/FYS-STK4155-P1), installed as a
 dependency.
 
+**Author:** Sigurd Riseth
+
 ## Project structure
+
+The project text asks for the code in a folder named `Code`; here it lives in `src/` (the
+Python package) and `notebooks/` (the notebooks that reproduce the results).
 
 ```
 .
