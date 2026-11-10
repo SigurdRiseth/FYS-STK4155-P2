@@ -5,12 +5,11 @@
 % was verified (unit tests, comparison against scikit-learn/known solutions,
 % etc.). Link to the repository.
 
-% We should probably reference the first project \cite{riseth_2026} if we reuse code?
-
-All methods were implemented from scratch in Python using NumPy~\cite{harris_2020}.
-The source code, unit tests, and experiment scripts are available in the project
-repository~\cite{riseth_2026a}. This section describes the datasets and preprocessing,
-the organization of the implementation, and the procedures used to verify correctness.
+All methods were implemented from scratch in Python using NumPy~\cite{harris_2020}, reusing
+the data generation, linear models and optimizers of Project~1~\cite{riseth_2026}.
+Scikit-Learn~\cite{pedregosa_2011} is used only for splitting and scaling the data and as a
+reference implementation. The code and the notebooks reproducing every figure and table are
+available in the project repository~\cite{riseth_2026a}.
 
 \subsection{Data and preprocessing}\label{subsec:data}
 
@@ -23,67 +22,84 @@ As observed in Project~1~\cite{riseth_2026}, polynomial regression can exhibit
 substantial oscillations near the endpoints of this interval. We generate
 $n=100$ input samples uniformly from $[-1,1]$, evaluate the function at these
 inputs, and add i.i.d. Gaussian noise with standard deviation
-$\sigma=0.1$ to obtain the observed targets.
+$\sigma=0.1$ to obtain the observed targets. As in Project~1, 20\% of the samples are held
+out for testing, with the same seed, so that the networks and the linear models are compared
+on identical data. The networks take the raw $x$ as their only input feature, standardized
+with the mean and standard deviation of the training data, while the linear models use
+standardized polynomial features.
 
 For the classification task, we use the MNIST dataset~\cite{lecun_2010},
 which contains 70\,000 grayscale images of handwritten digits, each of size
 $28 \times 28$ pixels, with labels corresponding to the ten classes
 $0,\ldots,9$, split into 60\,000 training and 10\,000 test images. We flatten
-each image to a vector of 784 features scaled to $[0, 1]$, and set aside a stratified
-validation set of 10\,000 training images. All hyperparameters are selected on the
-validation set; the test set is used only once, for the final comparison of the
-selected models.
+each image to a vector of 784 features scaled to $[0, 1]$, encode the labels as one-hot
+vectors, and set aside a stratified validation set of 10\,000 training images. All
+hyperparameters are selected on the validation set; the test set is used only once, for the
+final comparison of the selected models.
 
 \subsection{Code structure}\label{subsec:code-structure}
 
-We reuse the structure and the gradient machinery of the previous project~\cite{riseth_2026},
-which is summarized in \cref{alg:gd}.
-The code is structured in a package \texttt{fys\_stk4155\_p2}, containing the
-directory \texttt{nn}; which holds the code for the models including activation functions,
-layers (\texttt{Dense}, \texttt{Linear}, etc.), the network class \texttt{FFNN}, and loss
-functions.
+Dense layers and activation functions are separate layers of the network, so any activation
+can be placed after any layer. The weights are drawn from a normal distribution with Xavier~\cite{glorot_2010}
+or He~\cite{he_2015} scaling, matched to the activation, and the biases are initialized to zero. The sigmoid
+and the softmax are part of the cross entropies, so classification networks end in a linear
+layer that outputs logits. Logistic regression is the same network with a single dense layer.
+The network is trained as in \cref{alg:gd}.
 
 \begin{algorithm}
-    \caption{Gradient descent with a generic update rule}
+    \caption{Training of the FFNN with minibatches and early stopping}
     \label{alg:gd}
     {\small
     \begin{algorithmic}[1]
-        \Require $\bm{\theta}^{(0)}$, schedule $\gamma_t$, batch size $M$
-        ($M = n_\text{tr}$: full batch), epochs $E$, tolerance $\tau$,
+        \Require $\bm{\Theta}^{(0)}$, schedule $\gamma_t$, batch size $M$,
+        maximum epochs $E$, patience $P$,
         update rule $\mathcal{U}$ with state $\bm{s}$
-        \State $t \gets 0$, $\bm{s} \gets \bm{0}$
+        \State $t \gets 0$, $\bm{s} \gets \bm{0}$, $C^* \gets \infty$, $e^* \gets 0$
         \For{$e = 1, \dots, E$}
             \State Shuffle the training rows; split into $\lceil n_\text{tr}/M\rceil$ batches
             \For{each batch $\mathcal{B}$}
                 \State $\bm{g} \gets \frac{1}{|\mathcal{B}|}\sum_{i\in\mathcal{B}}
-                \nabla_{\bm{\theta}} c_i(\bm{\theta}^{(t)})$ \Comment{analytical or JAX}
-                \If{$M = n_\text{tr}$ \textbf{and} $\lVert\bm{g}\rVert_\infty < \tau$}
-                    \State \Return $\bm{\theta}^{(t)}$
-                \EndIf
-                \State $(\bm{\theta}^{(t+1)}, \bm{s}) \gets
-                \mathcal{U}(\bm{\theta}^{(t)}, \bm{g}, \gamma_t, \bm{s})$
+                \nabla_{\bm{\Theta}} c_i(\bm{\Theta}^{(t)})$ \Comment{backpropagation}
+                \State $(\bm{\Theta}^{(t+1)}, \bm{s}) \gets
+                \mathcal{U}(\bm{\Theta}^{(t)}, \bm{g}, \gamma_t, \bm{s})$
                 \Comment{e.g.\ \cref{eq:gd-basic,eq:adam-iterate}}
                 \State $t \gets t + 1$
             \EndFor
+            \State $C_\text{val} \gets C(\bm{\Theta}^{(t)})$ on the validation data
+            \If{$C_\text{val} < C^*$}
+                \State $C^* \gets C_\text{val}$, $e^* \gets e$, $\bm{\Theta}^* \gets \bm{\Theta}^{(t)}$
+            \ElsIf{$e - e^* \geq P$}
+                \State \textbf{break}
+            \EndIf
         \EndFor
-        \State \Return $\bm{\theta}^{(t)}$
+        \State \Return $\bm{\Theta}^*$
     \end{algorithmic}
     }
 \end{algorithm}
 
-Thin constructor of the \texttt{FFNN} for logistic regression, which returns a single layer with
-softmax activation and cross entropy loss. This allows us to use this as a baseline model
-when evaluating the later neural networks.
-
 \subsection{Hyperparameter search}\label{subsec:hyperparameter-search}
-% Regression: k-fold CV over the grids. Classification: grids scored on the
-% validation set, max epochs, patience, learning rate schedule, batch size and seed.
+
+All searches are grid searches, and every configuration starts from the same initial weights.
+The scores are computed from the predictions, so they never include the penalty, and networks
+with different $\lambda$ are compared on equal terms. For regression, configurations are scored
+by their 5-fold cross-validated MSE on the training data; the grids are given with the
+corresponding figures.
+
+For classification, configurations are scored by their accuracy on the validation set. All
+models are trained with Adam and a batch size of 128, logistic regression for 50 epochs over a
+grid of $\gamma$ and $\lambda$. The networks are trained for at most 30 epochs with early
+stopping with a patience of 5 epochs, and an exponentially decaying learning rate that falls by
+a factor of 10 over 30 epochs. We first search over the activation, the depth, the width and
+$\gamma$ without regularization, and then over $\gamma$ and $\lambda$ for the best architecture
+(\cref{tab:classification-hyperparameter-search}). The selected network is retrained with the
+same procedure, so the reported model is exactly the one that was scored.
 
 \subsection{Verification}\label{subsec:verification}
 
-The developed package has a test suite which checks the code against closed-form results
-and independent implementations:
-
-\begin{itemize}
-    \item
-\end{itemize}
+The code is covered by unit tests. Most importantly, the gradients from backpropagation agree
+with those from automatic differentiation with JAX~\cite{bradbury_2018} to a relative tolerance
+of $10^{-7}$, for networks with two hidden layers and every combination of activation function,
+cost function and penalty. We also compare our logistic regression and our selected network with
+Scikit-Learn's \texttt{LogisticRegression} and \texttt{MLPClassifier}. These normalize the
+penalty differently: our $\lambda$ corresponds to $C = 1/(2\lambda n)$ and
+$\alpha = 2\lambda M$, respectively.
