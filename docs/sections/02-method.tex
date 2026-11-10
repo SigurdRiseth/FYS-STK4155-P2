@@ -68,6 +68,27 @@ closed-form solution~\cite{hjorth-jensen_2026}.
 
 \subsubsection{Categorical cross entropy}
 
+For $K$ classes, the model outputs one logit $z_{ik}$ per class, and the softmax maps them
+to probabilities that are positive and sum to one,
+\begin{equation}\label{eq:softmax}
+    p_{ik} = \frac{e^{z_{ik}}}{\sum_{k'=0}^{K-1} e^{z_{ik'}}}.
+\end{equation}
+With the targets one-hot encoded, $y_{ik} = 1$ if sample $i$ belongs to class $k$ and $0$
+otherwise, the negative log-likelihood averaged over the samples is the categorical cross
+entropy (CCE),
+\begin{equation}\label{eq:cce-cost}
+    C_\text{CCE} = -\frac{1}{n}\sum_{i=0}^{n-1}\sum_{k=0}^{K-1} y_{ik}\log p_{ik},
+\end{equation}
+which reduces to \cref{eq:bce-cost} for $K = 2$~\cite{hjorth-jensen_2026}. Its derivative
+with respect to a logit has the same form as for the binary case,
+\begin{equation}\label{eq:cce-gradient}
+    \frac{\partial C_\text{CCE}}{\partial z_{ik}} = \frac{1}{n}\left(p_{ik} - y_{ik}\right),
+\end{equation}
+so multinomial logistic regression, with $\bm{Z} = \bm{X}\bm{\Theta}$, has the gradient
+$\frac{1}{n}\bm{X}^\top(\bm{P} - \bm{Y})$. Since the softmax is unchanged when the same
+constant is subtracted from all logits, we subtract the largest logit before
+exponentiating, so that no exponential overflows~\cite{hjorth-jensen_2026}.
+
 \subsubsection{Penalties}
 Any of the costs above can be extended with an $\ell_2$ or $\ell_1$ penalty on the weight
 matrices $\bm{W}^l$ of the network,
@@ -134,7 +155,7 @@ taking steps of order $\gamma$ there.
 \paragraph{Stochastic gradient descent}
 
 For a cost that is an average over the data, $C(\bm{\theta}) = \frac{1}{n}
-\sum_i c_i(\bm{\theta})$, stochastic gradient descent (SGD) replaces the full
+\sum_{i=0}^{n-1} c_i(\bm{\theta})$, stochastic gradient descent (SGD) replaces the full
 gradient by the average over a mini-batch $\mathcal{B}_k$ of $M$ points,
 \begin{equation}
     \bm{g}^{(k)} = \frac{1}{M}\sum_{i\in\mathcal{B}_k}\nabla_{\bm{\theta}}
@@ -244,10 +265,10 @@ the data rather than given in advance~\cite{hjorth-jensen_2026}.
 
 An artificial neuron computes a linear predictor, as in logistic regression, followed
 by an activation function. We number layers as $l =0,1,\dots,L$, with $l=0$ the input and
-$l=L$ the output, and $M_l$ the number of nodes in layer $L$. For a single neuron $j$ in
+$l=L$ the output, and $n_l$ the number of nodes in layer $l$. For a single neuron $j$ in
 layer $l$, the activation is
 \begin{equation}\label{eq:single-activation}
-    z_j^l = \sum_{i=1}^{M_{l-1}} w_{ij}^l a_i^{l-1}+b_j^l,
+    z_j^l = \sum_{i=0}^{n_{l-1}-1} w_{ij}^l a_i^{l-1}+b_j^l,
 \end{equation}
 where $w_{ij}^l$ is the weight connecting node $i$ of layer $l-1$ to node $j$ of layer $l$,
 and $b_j^l$ is the bias of node $j$ in layer $l$. We can then obtain the output by applying
@@ -287,12 +308,14 @@ output $\bm{\tilde{y}}=\bm{a}^L$~\cite{hjorth-jensen_2026}.
 \end{figure}
 
 We can further collect the weights and biases into a single parameter vector
-$\bm{\Theta}=\{\bm{w}^l, \bm{b}^l\}_{l=1}^L$, and write the optimization problem as
+$\bm{\Theta}=\{\bm{W}^l, \bm{b}^l\}_{l=1}^L$, and write the optimization problem as
 \begin{equation}\label{eq:nn-optimization-problem}
     \hat{\bm{\Theta}} = \arg \min_{\bm{\Theta}} C(\bm{\Theta}), \quad
-    C(\bm{\Theta}) = \frac{1}{n} \sum_{i=1}^n L(y_i, \tilde{y}_i) + \lambda \Omega(\bm{\Theta}),
+    C(\bm{\Theta}) = \frac{1}{n} \sum_{i=0}^{n-1} c_i(\bm{\Theta}),
 \end{equation}
-where $L$ is the cost function and $\Omega$ is the regularization term~\cite{hjorth-jensen_2026}.
+where $c_i$ is the cost of sample $i$ for one of the cost functions of
+\cref{subsec:cost-functions}, with a penalty from \cref{eq:penalties} added when the network
+is regularized~\cite{hjorth-jensen_2026}.
 This is a non-convex optimization problem, so there is no closed-form solution, and we must
 resort to the gradient-based methods reported in \cref{subsec:optimization} to find
 a local minimum.
@@ -332,7 +355,7 @@ large $|z|$, which leads to vanishing gradients and slow training~\cite{hjorth-j
 is faster to compute, does not saturate for $z>0$, and is a sound default choice for hidden layers.
 Its main drawback is that it can lead to dead neurons, which never activate and thus never learn~\cite{hjorth-jensen_2026}.
 
-The leaky ReLU repairs this issue by allowing a small gradient for negative values,
+\paragraph{Leaky ReLU} The leaky ReLU repairs this issue by allowing a small gradient for negative values,
 so the gradient never completely vanishes. It is defined as
 \begin{equation*}\label{eq:leaky-relu}
     \text{Leaky ReLU}(z) =
@@ -357,7 +380,7 @@ We can compute the gradient of the cost function with respect to the parameters 
 the backpropagation algorithm~\cite{rumelhart_1986}. The key idea is to compute the
 error at the output layer and then propagate it backward through the network.
 
-Writing the cost as $C = \frac{1}{n}\sum_i c_i$, the error of sample $i$ at layer $l$ is
+Writing the cost as $C = \frac{1}{n}\sum_{i=0}^{n-1} c_i$, the error of sample $i$ at layer $l$ is
 $\bm{\delta}_i^l = \partial c_i / \partial \bm{z}_i^l$, which satisfies
 \begin{equation*}
     \bm{\delta}_i^l = (\bm{W}^{l+1} \bm{\delta}_i^{l+1}) \odot \bm{f}'(\bm{z}_i^l),
@@ -367,9 +390,10 @@ output layer and cost give
 $\bm{\delta}_i^L \propto \bm{a}_i^L - \bm{y}_i$, with a factor 2 for the MSE and 1 for the
 cross entropies~\cite{hjorth-jensen_2026}. The gradients are then averaged over the samples,
 \begin{equation*}
-    \frac{\partial C}{\partial \bm{W}^l} = \frac{1}{n}\sum_i \bm{a}_i^{l-1} (\bm{\delta}_i^l)^\top,
+    \frac{\partial C}{\partial \bm{W}^l} = \frac{1}{n}\sum_{i=0}^{n-1} \bm{a}_i^{l-1}
+    (\bm{\delta}_i^l)^\top,
     \qquad
-    \frac{\partial C}{\partial \bm{b}^l} = \frac{1}{n}\sum_i \bm{\delta}_i^l,
+    \frac{\partial C}{\partial \bm{b}^l} = \frac{1}{n}\sum_{i=0}^{n-1} \bm{\delta}_i^l,
 \end{equation*}
 where SGD takes the mean over a minibatch instead. Any penalty gradient (\cref{eq:penalties}) is
 added to $\partial C / \partial \bm{W}^l$, and the parameters are updated with the methods of
@@ -440,7 +464,7 @@ improve~\cite{hjorth-jensen_2026}. While the training loss may continue
 to decrease, an increasing validation loss can indicate that the model
 is beginning to overfit the training data~\cite{geron_2023}. We therefore
 monitor the validation loss throughout training and stop if it has not
-decreased for five consecutive epochs. The model weights are subsequently
+decreased for a given number of epochs, the patience. The model weights are subsequently
 restored to those obtained at the epoch with the lowest validation loss.
 
 \subsection{Evaluation}\label{subsec:evaluation}
@@ -448,8 +472,8 @@ restored to those obtained at the epoch with the lowest validation loss.
 A model cannot be trusted without any metrics for evaluating its performance.
 For regression, we evaluate a prediction $\tilde{\bm{y}}$ of targets $\bm{y}$ by
 \begin{equation}
-    \mathrm{MSE} = \frac{1}{n}\sum_{i}(y_i-\tilde{y}_i)^2, \quad
-    R^2 = 1 - \frac{\sum_i (y_i - \tilde{y}_i)^2}{\sum_i (y_i - \bar{y})^2},
+    \mathrm{MSE} = \frac{1}{n}\sum_{i=0}^{n-1}(y_i-\tilde{y}_i)^2, \quad
+    R^2 = 1 - \frac{\sum_{i=0}^{n-1} (y_i - \tilde{y}_i)^2}{\sum_{i=0}^{n-1} (y_i - \bar{y})^2},
 \end{equation}
 with $\bar{y}$ the mean of $\bm{y}$. An unbiased model with no variance reaches
 $\mathrm{MSE} = \sigma^2$ in expectation; $R^2$ compares against predicting
