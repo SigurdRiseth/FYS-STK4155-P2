@@ -33,7 +33,9 @@ flexibility on fitting the noise near the edges, where the data constrain it lea
 \begin{table}[htbp]
     \centering
     \caption{Performance of OLS and the two sigmoid networks. The networks have a higher
-          training MSE, but are far closer to the true function.}
+          training MSE, but are far closer to the true function. The $1 \times 50$ network
+          is trained with Adam ($\gamma = 10^{-1}$, 100 epochs) and the $2 \times 100$ network
+          with RMSprop ($\gamma = 10^{-4}$, $10^4$ epochs), both with a batch size of 32.}
     \label{tab:regression}
     {\footnotesize\setlength{\tabcolsep}{4pt}
     \begin{tabular}{@{}lccc@{}}
@@ -46,6 +48,22 @@ flexibility on fitting the noise near the edges, where the data constrain it lea
         \bottomrule
     \end{tabular}}
 \end{table}
+
+\Cref{fig:learning-rates} shows how the optimizer and the learning rate decide whether the
+networks train at all. Plain gradient descent rarely leaves the mean prediction, while RMSprop
+and Adam reach the noise floor over a wide range of learning rates. Mini-batches make every
+optimizer more robust, most clearly at large learning rates.
+
+\begin{figure*}[htbp]
+     \centering
+     \includegraphics[width=0.8\textwidth]{figures/regression/learning_rates.pdf}
+     \caption{Plain gradient descent rarely leaves the mean prediction, while the adaptive
+          methods work over a wide range of learning rates. Cross-validated MSE of the two
+          sigmoid networks for each optimizer, with full-batch (GD) and mini-batch (SGD)
+          updates, at the best number of epochs and batch size. An MSE near $0.10$ is the
+          mean prediction.}
+     \label{fig:learning-rates}
+\end{figure*}
 
 Training a sigmoid network often starts with a plateau, where the network predicts the mean of
 the data and the gradient towards curved features is small~\cite{saxe_2014} (\cref{fig:training-history}).
@@ -211,7 +229,8 @@ gives nothing for the ReLU family. The sigmoid networks behave differently. They
 epochs, prefer large learning rates, and fail when the network is deep, which is consistent
 with the vanishing gradients discussed in \cref{subsec:neural-networks}. The ReLU family
 trains well over a wide range of learning rates, but fails at $\gamma = 10^{-1}$.
-The best network is the widest in the grid, so a wider network might have done even better.
+The best network is both the widest and the shallowest in the grid, so a wider or shallower
+network might have done even better.
 
 \begin{table}[htbp]
     \centering
@@ -244,7 +263,7 @@ The best network is the widest in the grid, so a wider network might have done e
 
 For the selected architecture, a small penalty gives a slight improvement, while
 $\lambda > 10^{-2}$ clearly hurts (\cref{fig:ffnn-regularization}). With
-$60\,000$ training images and early stopping, the network does not overfit much, so there is
+$50\,000$ training images and early stopping, the network does not overfit much, so there is
 little for the penalty to correct. Large penalties combined with large learning rates make
 training fail, and the network falls back to predicting a single digit.
 
@@ -298,7 +317,7 @@ similar to the one between the constant and decaying learning rate in
 \begin{figure}[htbp]
      \centering
      \includegraphics[width=\linewidth]{figures/classification/ffnn_confusion_matrix.pdf}
-     \caption{Confusion matrix of the selected network on the validation set, normalized by
+     \caption{Confusion matrix of the selected network on the test set, normalized by
      row (\%). Compared with logistic regression (\cref{fig:logreg-matrix}), the recall is
      high for every digit.}
      \label{fig:ffnn-matrix}
@@ -333,8 +352,9 @@ stopping improved the classification network at no extra cost.
 
 Our study also has limitations. Every configuration was trained from one set of initial
 weights and evaluated on one split, so small differences between configurations are not
-significant. The regression test set has only 20 samples, the best classification network is
-at the edge of the search grid, and the grids are coarse. The learning rate schedule was only
+significant. The regression test set has only 20 samples, and the grids are coarse. The best
+classification network lies at the edge of the search grid, which starts at four hidden
+layers, so we cannot say whether one or two hidden layers would have done as well. The learning rate schedule was only
 used for classification. The answer to the question in \cref{sec:introduction} is therefore
 qualitative: the flexibility of a network is worth its cost when good features are hard to
 choose by hand, as for images, and least worth it when a simple model with suitable features

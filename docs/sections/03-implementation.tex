@@ -88,7 +88,7 @@ corresponding figures.
 
 For classification, configurations are scored by their accuracy on the validation set. All
 models are trained with Adam and a batch size of 128, logistic regression for 50 epochs over a
-grid of $\gamma$ and $\lambda$. The networks are trained for at most 50 epochs with early
+grid of $\gamma$ and $\lambda$, which selects $\gamma = 10^{-3}$ and $\lambda = 10^{-6}$. The networks are trained for at most 50 epochs with early
 stopping with a patience of 5 epochs, and an exponentially decaying learning rate that falls by
 a factor of 10 over 50 epochs. We first search over the activation, the depth, the width and
 $\gamma$ without regularization, and then over $\gamma$ and $\lambda$ for the best architecture

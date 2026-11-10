@@ -8,7 +8,7 @@ This appendix contains figures that support the discussion in
      \centering
      \includegraphics[width=\linewidth]{figures/regression/history.pdf}
      \caption{Training MSE per epoch for the selected FFNNs: one hidden layer of 50 nodes
-     (Adam, $\gamma=0.1$, 100 epochs) and two hidden layers of 100 nodes (RMSProp,
+     (Adam, $\gamma=0.1$, 100 epochs) and two hidden layers of 100 nodes (RMSprop,
      $\gamma=10^{-4}$, 10000 epochs), both with a batch size of 32. The larger network
      stays at the mean prediction, with an MSE near the variance of the targets, for a large
      part of the training.}
@@ -39,7 +39,7 @@ This appendix contains figures that support the discussion in
 \begin{figure}[htbp]
      \centering
      \includegraphics[width=\linewidth]{figures/classification/logreg_confusion_matrix.pdf}
-     \caption{Confusion matrix of logistic regression on the validation set, normalized by
+     \caption{Confusion matrix of logistic regression on the test set, normalized by
      row so that the diagonal is the recall of each digit (\%). Most errors are between
      digits that share strokes, such as 3, 5 and 8.}
      \label{fig:logreg-matrix}

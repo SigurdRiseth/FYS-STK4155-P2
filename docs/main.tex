@@ -18,8 +18,6 @@
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
-\usepackage[hidelinks]{hyperref}
-\usepackage{cleveref}
 \usepackage{booktabs}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
@@ -31,11 +29,14 @@
     frame=leftline,
     framesep=4pt,
 }
-\crefname{lstlisting}{listing}{listings}
-\Crefname{lstlisting}{Listing}{Listings}
 \usepackage{bm}
 \usepackage{tabularx}
 \usepackage{subfigure}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+\crefname{lstlisting}{listing}{listings}
+\Crefname{lstlisting}{Listing}{Listings}
 
 \addbibresource{references.bib}
 
@@ -73,7 +74,7 @@ features remains a cheap and robust choice.
 \end{abstract}
 
 \begin{IEEEkeywords}
-classification, regression, feed-forward neural networks, runge's function, MNIST
+classification, regression, feed-forward neural networks, Runge's function, MNIST
 \end{IEEEkeywords}
 
 %\tableofcontents
