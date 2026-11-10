@@ -214,6 +214,12 @@ class FFNN:
             ValueError: If ``X`` and ``y``, or ``X_val`` and ``y_val``, have different
                 numbers of samples, if ``epochs``, ``batch_size`` or ``patience`` is not
                 positive, or if ``patience`` is given without ``validation_data``.
+
+        LLM-assisted
+        ------------
+        Tool: Claude (claude-opus-5-5, Claude Code CLI, November 2026)
+        Role: Completed the author's draft of the learning rate schedules and early
+            stopping (snippet).
         """
         X = _as_2d(X)
         self._ravel_output = np.ndim(y) == 1

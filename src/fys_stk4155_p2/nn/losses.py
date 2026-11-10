@@ -3,6 +3,11 @@
 The losses are available both as plain functions and as ``Loss`` subclasses. The
 functions are convenient for testing; the classes give the network a single interface,
 ``loss(y_true, output)`` and ``loss.derivative(y_true, output)``, whichever loss it uses.
+
+LLM-assisted
+------------
+Tool: Claude (claude-opus-5-5, Claude Code CLI, November 2026)
+Role: Wrapped the author's loss functions in the ``Loss`` classes.
 """
 
 from abc import ABC, abstractmethod

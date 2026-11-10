@@ -4,6 +4,11 @@ The activations are available both as plain functions and as ``Activation`` laye
 functions are convenient for testing and for turning logits into probabilities; the
 layers let the network chain ``forward`` and ``backward`` without knowing which
 activation it uses.
+
+LLM-assisted
+------------
+Tool: Claude (claude-opus-5-5, Claude Code CLI, November 2026)
+Role: Wrapped the author's activation functions in the ``Activation`` layer classes.
 """
 
 from abc import abstractmethod
