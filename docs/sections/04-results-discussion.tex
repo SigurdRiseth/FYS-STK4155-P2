@@ -1,210 +1,167 @@
 \section{Results and Discussion}
 \label{sec:results-discussion}
 
-This section presents and discusses the results from our experiments. First we
-cover the regression task, comparing linear regression to regression using FFNNs;
-afterward we cover the classification task of classifying handwritten digits
-using neural networks. Finally, we evaluate the methods critically across both tasks.
+We first compare the networks with the linear models on Runge's function, and then with
+logistic regression on MNIST. The section ends with a critical evaluation of the methods.
 
 \subsection{Regression}
 
-\subsubsection{Sigmoid networks}
+The test set has only 20 samples, and the noise variance $\sigma^2 = 0.01$ sets a floor for
+the test MSE that every good model reaches. Differences in test MSE between good models are
+therefore mostly noise, so we compare them by their MSE against the true function $f$ on a
+dense grid, which is free of noise.
 
-We compare the best OLS model from Project 1 with two simple FFNN architectures; the resulting
-predictions are shown in \cref{fig:model-comparison}. The OLS model exhibits pronounced
-oscillations near the boundaries of the input domain, whereas both neural networks provide
-smoother approximations of the underlying function. This illustrates one limitation of polynomial
-regression: its predictions can become unstable near the boundaries, particularly when
-using higher-degree polynomials. In contrast, the FFNNs learn the function directly from
-the input features, without requiring us to specify a polynomial design matrix. The input
-to the neural networks is therefore simply the one-dimensional feature matrix
-$\bm{X} \in \mathbb{R}^{n \times 1}$.
+\subsubsection{Sigmoid networks and optimizers}
+
+\Cref{fig:model-comparison} shows the main result of this part. OLS with the polynomial
+degree selected in Project~1 oscillates near the ends of the interval, while both networks
+follow Runge's function smoothly, using only the raw $x$ as input.
 
 \begin{figure}[htbp]
      \centering
      \includegraphics[width=\linewidth]{figures/regression/model_comparison.pdf}
-     \caption{Comparison of OLS and two FFNN architectures when approximating
-          Runge's function. The data consist of 100 noisy samples with
-          $\sigma=0.1$, with 20\% reserved for testing.}
+     \caption{OLS and two sigmoid networks fitted to 80 noisy samples of Runge's function.
+          OLS oscillates near the ends of the interval, while the networks follow the
+          function smoothly.}
      \label{fig:model-comparison}
 \end{figure}
 
-The quantitative results are presented in \cref{tab:regression}. The FFNN with two hidden
-layers of 100 neurons each achieves the lowest MSE relative to the true function, outperforming the
-one-hidden-layer FFNN and OLS by factors of roughly 1.7 and 10, respectively.
+OLS has the lowest training MSE, but the networks approximate $f$ about an order
+of magnitude better, as shown in \cref{tab:regression}. The polynomial spends its
+flexibility on fitting the noise near the edges, where the data constrain it least.
 
 \begin{table}[htbp]
     \centering
-    \caption{Training and test performance of OLS and two FFNN architectures
-          on Runge's function.}
+    \caption{Performance of OLS and the two sigmoid networks. The networks have a higher
+          training MSE, but are far closer to the true function.}
     \label{tab:regression}
     {\footnotesize\setlength{\tabcolsep}{4pt}
-    \begin{tabular}{@{}lccccc@{}}
+    \begin{tabular}{@{}lccc@{}}
         \toprule
-        Model & Train MSE & Test MSE & Train $R^2$ & Test $R^2$ & MSE vs $f$ \\
+        Model & Train MSE & Test MSE & MSE vs $f$ \\
         \midrule
-        OLS ($p=12$) & $0.0081$ & $0.0086$ & $0.9207$ & $0.6280$ & $0.0125$ \\
-        FFNN ($50$) & $0.0097$ & $0.0092$ & $0.9053$ & $0.5996$ & $0.0020$ \\
-        FFNN ($100, 100$) & $0.0089$ & $0.0085$ & $0.9136$ & $0.6315$ & $0.0012$ \\
+        OLS ($p=12$) & $0.0081$ & $0.0086$ & $0.0125$ \\
+        FFNN ($1 \times 50$) & $0.0097$ & $0.0092$ & $0.0020$ \\
+        FFNN ($2 \times 100$) & $0.0089$ & $0.0085$ & $0.0012$ \\
         \bottomrule
     \end{tabular}}
 \end{table}
 
-Interestingly, OLS achieves the lowest training MSE, but this does not translate into the
-best approximation of the underlying function. The discrepancy between its training and
-test performance, together with the oscillations visible in \cref{fig:model-comparison}
-and high MSE vs $f$ score, suggests that the polynomial model is sensitive to the noise
-in the training data and exhibits overfitting. The FFNN models provide a better
-approximation of the true function, despite both having a slightly higher training MSE.
-
-The two networks were selected with different optimizers, learning rates and numbers of
-epochs, so their training histories (\cref{fig:training-history}) do not isolate the
-effect of size. They do, however, show a behavior common to our sigmoid networks: the
-network with two hidden layers, trained with RMSprop at $\gamma = 10^{-4}$, stays at a
-plateau around $0.1$, the variance of the training targets ($0.103$), for a large part of
-the training. At this plateau, the network predicts the mean of the data, and the gradient
-towards curved features is small. This is the plateau behavior known for sigmoid
-networks~\cite{saxe_2014}, and the sigmoid networks of \cref{fig:activation-curves} show the
-same plateau with Adam, regardless of their size.
-
-Meanwhile, in \cref{fig:optimizer-curves}, we can see how Adam and RMSProp escape much
-sooner than plain gradient descent at the same learning rate. Additionally, a higher
-learning rate escapes the plateau faster and reaches the optimum faster but with
-noticeably more noise. This motivates learning rate scheduling, which we will use in
-later parts of this project.
+Training a sigmoid network often starts with a plateau, where the network predicts the mean of
+the data and the gradient towards curved features is small~\cite{saxe_2014} (\cref{fig:training-history}).
+\Cref{fig:optimizer-curves} shows that the optimizer decides how long this lasts: RMSprop and
+Adam leave the plateau far sooner than plain SGD at the same learning rate. A larger learning
+rate also leaves it sooner, but makes the cost noisy near the minimum, which motivates the
+decaying learning rate we use for classification.
 
 \begin{figure}[htbp]
      \centering
      \includegraphics[width=\linewidth]{figures/regression/optimizer_curves.pdf}
-     \caption{Training MSE per epoch for the network with one hidden layer of 50 nodes,
-     trained with plain SGD, RMSProp and Adam at batch size 16 for four learning
-     rates.}
+     \caption{Training MSE per epoch of the $1 \times 50$ sigmoid network, trained with plain
+     SGD, RMSprop and Adam at batch size 16 for four learning rates. The adaptive methods
+     leave the initial plateau far sooner, and larger learning rates are faster but noisier.}
      \label{fig:optimizer-curves}
 \end{figure}
 
-\subsubsection{The ReLU-family, larger networks and overfitting}
+\subsubsection{Activation functions, depth and width}
 
-Now we explore how the networks perform as a function of depth and width, including
-when substituting the hidden layers' activation functions with ReLU and its leaky
-variant.
+\Cref{fig:activation-architectures} shows that small networks are best for all three
+activations, and that the error grows with depth, faster for the ReLU family than for the
+sigmoid. A smooth function of one variable needs little capacity, and the extra parameters of
+a large network are spent on the noise.
 
-In \cref{fig:activation-architectures} we observe how the 5-fold CV MSE generally
-increases with depth, particularly at eight hidden layers, and that the ReLU family
-degrades more quickly than the sigmoid. Shallow networks perform best for all three
-activations, and no configuration diverged.
-
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
      \centering
      \includegraphics[width=\linewidth]{figures/regression/activation_architectures.pdf}
-     \caption{Cross-validated MSE for each combination of activation function, number
-          of hidden layers and nodes per hidden layer. Each cell shows the lowest
-          5-fold MSE over the learning rates $\gamma \in \{10^{-2}, 10^{-3}, 10^{-4}\}$,
-          with all networks trained using Adam for 5000 epochs with a batch size of 32.
-          All panels share the same logarithmic color scale; lighter is better.}
+     \caption{Cross-validated MSE for each activation and architecture, at the best learning
+          rate $\gamma \in \{10^{-2}, 10^{-3}, 10^{-4}\}$, with Adam, 5000 epochs and a batch
+          size of 32. Lighter is better. Shallow networks are best, and depth hurts the ReLU
+          family most.}
      \label{fig:activation-architectures}
-\end{figure}
+\end{figure*}
 
-\Cref{tab:activation-comparison} shows how each activation function's best fit aligns with
-Runge's function. The differences in training and test MSE are too small to separate the
-activations: with only 20 test samples and noise variance $\sigma^2 = 0.01$, the test MSE has
-a standard error of roughly $\sigma^2\sqrt{2/20} \approx 0.003$, and all three networks are
-close to the noise floor. Only the MSE against $f$, which is free of noise, favors the
-sigmoid network. In \cref{fig:activation-comparison},
-we can also observe how the ReLU networks are piecewise linear with only a few visible
-kinks, so they approximate the peak and the tails with straight segments. Sigmoids naturally
-give smooth curves, which may suit Runge's function better.
+The best network of each activation reaches about the same test MSE
+(\cref{tab:activation-comparison}), well within the noise of the small test set. Only the
+MSE against $f$ separates them, in favor of the sigmoid. The ReLU networks are piecewise
+linear and approximate the peak with a few straight segments, while the sigmoid gives a smooth
+curve that suits Runge's function better (\cref{fig:activation-comparison}).
 
 \begin{table}[htbp]
     \centering
-    \caption{Training and test performance of the architecture with the lowest
-          cross-validated MSE for each activation function.}
+    \caption{Performance of the network with the lowest cross-validated MSE for each
+          activation. Only the MSE against $f$ separates them.}
     \label{tab:activation-comparison}
     {\footnotesize\setlength{\tabcolsep}{4pt}
-    \begin{tabular}{@{}lcccc@{}}
+    \begin{tabular}{@{}lccc@{}}
         \toprule
-        Activation & Train MSE & Test MSE & Test $R^2$ & MSE vs $f$ \\
+        Activation & Train MSE & Test MSE & MSE vs $f$ \\
         \midrule
-        Sigmoid ($1 \times 80$) & $0.0091$ & $0.0076$ & $0.6684$ & $0.0015$ \\
-        ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.6513$ & $0.0022$ \\
-        Leaky ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.6504$ & $0.0021$ \\
+        Sigmoid ($1 \times 80$) & $0.0091$ & $0.0076$ & $0.0015$ \\
+        ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.0022$ \\
+        Leaky ReLU ($2 \times 10$) & $0.0083$ & $0.0080$ & $0.0021$ \\
         \bottomrule
     \end{tabular}}
 \end{table}
 
-The deeper networks overfit. In \cref{fig:activation-curves}, the training MSE of the
-largest networks ($8 \times 160$) falls below the noise floor $\sigma^2$, while their
-validation MSE levels off well above it. The gap is much smaller for the smallest networks.
+The learning curves in \cref{fig:activation-curves} confirm that the large networks overfit:
+their training MSE falls below the noise floor, while their validation MSE stays well above
+it. The smallest networks show a much smaller gap.
 
 \begin{figure}[htbp]
      \centering
      \includegraphics[width=\linewidth]{figures/regression/activation_curves.pdf}
      \caption{Training (dashed) and validation (solid) MSE per epoch for the smallest
-          ($1 \times 10$) and largest ($8 \times 160$) network of each activation, each
-          at its best learning rate, trained with Adam and a batch size of 32 on four fifths
-          of the training data and validated on the remaining fifth.}
+          ($1 \times 10$) and largest ($8 \times 160$) network of each activation, validated
+          on one fifth of the training data. The large networks fit the noise, with a
+          training MSE below $\sigma^2$ and a validation MSE well above it.}
      \label{fig:activation-curves}
 \end{figure}
 
-\subsubsection{Adding regularization}
+\subsubsection{Regularization}
 
-Since the deeper and wider networks overfit, we add the $\ell_1$ and $\ell_2$ penalties of
-\cref{eq:penalties} to the networks with four and eight hidden layers of 40 and 80 nodes,
-and search over $\lambda \in \{0, 10^{-5}, \dots, 10^{-1}\}$ and
-$\gamma \in \{10^{-2}, 10^{-3}, 10^{-4}\}$, with the training setup of
-\cref{fig:activation-architectures}. \Cref{fig:regularization-lambda} shows the
-training and cross-validated MSE as functions of $\lambda$, and
-\cref{fig:regularization-heatmaps} shows the full search over $\lambda$ and $\gamma$.
+To counter this overfitting, we add the $\ell_1$ and $\ell_2$ penalties to the networks with
+four and eight hidden layers of 40 and 80 nodes. \Cref{fig:regularization-lambda} shows the
+result, and \cref{fig:regularization-heatmaps} shows the full search over $\lambda$ and $\gamma$.
 
 \begin{figure*}[htbp]
      \centering
      \includegraphics[width=0.8\textwidth]{figures/regression/regularization_lambda.pdf}
-     \caption{Training (dashed) and 5-fold cross-validated (solid) MSE as functions of the
-          penalty strength $\lambda$ for each activation, norm and architecture, each at its
-          best learning rate $\gamma \in \{10^{-2}, 10^{-3}, 10^{-4}\}$. All networks are
-          trained with Adam for 5000 epochs with a batch size of 32. $\lambda = 0$ is drawn
-          one decade below the smallest $\lambda$.}
+     \caption{Training (dashed) and cross-validated (solid) MSE as functions of the penalty
+          $\lambda$, at the best learning rate, with $\lambda = 0$ drawn one decade below the
+          smallest $\lambda$. For the ReLU family, both penalties give a clear minimum at
+          $\lambda = 10^{-3}$, while every sigmoid network collapses to the mean prediction
+          already at small $\lambda$.}
      \label{fig:regularization-lambda}
 \end{figure*}
 
-For the ReLU family, both penalties give the U-shaped curve expected from the
-bias--variance trade-off. Without a penalty, the training MSE is between $0.005$ and $0.007$,
-well below $\sigma^2 = 0.01$, so the networks fit the noise. At $\lambda = 10^{-3}$, the
-training MSE rises towards $\sigma^2$ and the cross-validated MSE reaches its minimum, while
-at $\lambda = 10^{-1}$, the weights are shrunk until the network predicts the mean, with an
-MSE equal to the variance of the targets. The penalty helps most where the overfitting was
-worst: for ReLU ($4 \times 80$), $\ell_1$ lowers the cross-validated MSE from $0.0178$ to
-$0.0106$, and for Leaky ReLU ($8 \times 40$), $\ell_2$ lowers it from $0.0230$ to $0.0111$.
-The regularized networks thus perform as well as the best small networks without a penalty
-($0.0109$, \cref{fig:activation-architectures}), so for the ReLU family, the penalty can replace
-a careful choice of architecture. The two norms select the same $\lambda$, and their best cross-validated MSEs differ by
-less than $0.0005$. Since we use a subgradient with a finite step, we would not expect
-$\ell_1$ to give the exactly sparse weights of Lasso either.
+For the ReLU family, both penalties give the U-shaped curve of the bias--variance trade-off.
+Without a penalty, the networks fit the noise. A moderate penalty raises the training MSE
+towards $\sigma^2$ and lowers the validation MSE, while a large one shrinks the weights until
+the network predicts the mean. The penalty helps most for the networks that overfit most, and
+brings them to the level of the best small networks without a penalty, so for the ReLU family,
+a penalty can replace a careful choice of architecture. The two norms perform almost
+identically, and since we use a subgradient with a finite step, $\ell_1$ does not give the
+exactly sparse weights of Lasso either.
 
-The sigmoid networks behave differently. The best sigmoid configuration has $\lambda = 0$ for
-both norms, and already at $\lambda = 10^{-4}$ for $\ell_1$ and $10^{-3}$ for $\ell_2$, every
-sigmoid network predicts the mean. A possible explanation is that the penalty is summed over
-all weights and is not divided by $n$, so for networks of this size it is comparable to the
-MSE already at small $\lambda$. A ReLU network can keep its function while redistributing the
-size of the weights between layers, since $\mathrm{ReLU}(cz) = c\,\mathrm{ReLU}(z)$ for
-$c > 0$. A sigmoid network has no such freedom: small weights put each node in the nearly
-linear region of the sigmoid around $z = 0$, and the network loses the curvature it needs for
-the peak. The unregularized sigmoid networks also overfit less to begin with
-(\cref{fig:activation-curves}), so there is little for the penalty to gain.
+The sigmoid networks gain nothing from a penalty: their best configuration has $\lambda = 0$,
+and even small penalties make them predict the mean. A possible explanation is how the
+weights scale. A ReLU network can shrink the weights of one layer and grow those of another
+without changing its output, and
+can therefore reduce the penalty while keeping its function. A sigmoid network cannot, since
+small weights put every node in the nearly linear region around $z = 0$, where the network
+loses the curvature it needs for the peak. The sigmoid networks also overfit less to begin
+with, so they have less to gain.
 
-\Cref{tab:regularization-comparison} and \cref{fig:regularization-comparison} compare the
-best regularized networks with the Ridge and Lasso models of Project~1~\cite{riseth_2026},
-selected with 5-fold cross-validation on the same training data. The networks approximate $f$
-6 and 5 times better, respectively. Ridge, with a degree of 11 and a small penalty, still
-oscillates near $x = 1$, while Lasso, with a degree of 6, underfits the peak. The Lasso
-model is weaker than it could be, since our Lasso solver did not converge for high degrees in
-Project~1, which pushed the selection towards a low degree and a large penalty. Note also that
-the values of $\lambda$ are not comparable between the models, since they penalize
-parameters of different number and meaning.
+Finally, the best regularized networks approximate $f$ about five times better than the Ridge
+and Lasso models (\cref{tab:regularization-comparison}).
+Ridge still oscillates near $x = 1$, while Lasso underfits the peak
+(\cref{fig:regularization-comparison}). The Lasso
+model is weaker than it could be, since our Lasso solver did not converge for high degrees.
 
 \begin{table}[htbp]
     \centering
-    \caption{Training and test performance of the best regularized networks and the
-          Ridge and Lasso models of Project~1 on Runge's function.}
+    \caption{The best regularized networks and the Ridge and Lasso models of Project~1. The
+          networks are about five times closer to the true function.}
     \label{tab:regularization-comparison}
     {\footnotesize\setlength{\tabcolsep}{4pt}
     \begin{tabular}{@{}lccc@{}}
@@ -348,3 +305,37 @@ similar to the one between the constant and decaying learning rate in
 \end{figure}
 
 \subsection{Critical evaluation}\label{subsec:critical-evaluation}
+
+For both tasks, the neural networks gave the best models, but at a much higher cost. Linear
+and logistic regression have few hyperparameters, train quickly and have interpretable
+weights; OLS and Ridge even have closed-form solutions, and the cost of logistic regression is
+convex. A network has a non-convex cost, needs a search over the architecture, the activation,
+the optimizer, the learning rate and the penalty, and each configuration must be trained for
+many epochs. The networks were also more fragile: too large a learning rate or too deep a
+sigmoid network made training fail, which never happened for the linear models.
+
+For regression, a small sigmoid network approximated Runge's function best. Its advantage
+over OLS and Ridge comes from the polynomial features, which oscillate near the ends of the
+interval, rather than from linear regression itself; a better choice of basis would likely
+narrow the gap. If cost or interpretability matters, Ridge is a reasonable choice,
+but for the best fit of a function with a sharp feature, the network is better.
+
+For classification, the network made about a third as many errors as logistic regression.
+Here the features are hard to design by hand, and learning them is what makes the
+difference. Logistic regression remains a strong and cheap baseline, and its weights show
+directly what the model has learned.
+
+Across both tasks, Adam and RMSprop were more robust than plain gradient descent, and ReLU
+networks trained more reliably than sigmoid networks when the network was deep. A penalty
+only helped where the networks overfit, which was the case for the large networks on the 80
+regression samples, but hardly on the 50\,000 MNIST images. A decaying learning rate and early
+stopping improved the classification network at no extra cost.
+
+Our study also has limitations. Every configuration was trained from one set of initial
+weights and evaluated on one split, so small differences between configurations are not
+significant. The regression test set has only 20 samples, the best classification network is
+at the edge of the search grid, and the grids are coarse. The learning rate schedule was only
+used for classification. The answer to the question in \cref{sec:introduction} is therefore
+qualitative: the flexibility of a network is worth its cost when good features are hard to
+choose by hand, as for images, and least worth it when a simple model with suitable features
+is available.
